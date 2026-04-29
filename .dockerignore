@@ -1,0 +1,74 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Build output
+dist
+build
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage
+.nyc_output
+
+# Logs
+logs
+*.log
+
+# Temporary files
+temp
+tmp
+uploads
+*.tmp
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+CHANGELOG.md
+docs
+
+# Docker files (don't include in build context)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Prisma - keep schema but not migrations in build
+prisma/migrations
+
+# Misc
+.github
+.eslintrc
+.prettierrc
+.editorconfig
+nest-cli.json
