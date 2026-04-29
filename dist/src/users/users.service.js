@@ -133,11 +133,11 @@ let UsersService = class UsersService {
                 },
             },
         });
-        const mediaFiles = await this.prisma.mediaFile.findMany({
+        const storageAgg = await this.prisma.mediaFile.aggregate({
             where: { project: { userId } },
-            select: { size: true },
+            _sum: { size: true },
         });
-        const storageUsed = mediaFiles.reduce((acc, f) => acc + f.size, 0);
+        const storageUsed = storageAgg._sum.size ?? 0;
         return {
             subscription: user.subscription,
             videoQuota: {

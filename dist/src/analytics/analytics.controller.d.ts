@@ -17,11 +17,11 @@ export declare class AnalyticsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            status: import(".prisma/client").$Enums.JobStatus;
             s3Key: string | null;
             s3Url: string | null;
             duration: number | null;
             progress: number;
-            status: import(".prisma/client").$Enums.JobStatus;
             expiresAt: Date | null;
             projectId: string;
             resolution: import(".prisma/client").$Enums.ExportResolution;
@@ -44,12 +44,12 @@ export declare class AnalyticsController {
         exportsLast7Days: number;
         topUsers: {
             id: string;
-            email: string;
-            firstName: string;
-            lastName: string;
             _count: {
                 videoProjects: number;
             };
+            email: string;
+            firstName: string;
+            lastName: string;
         }[];
         subscriptionDistribution: {};
     }>;

@@ -24,13 +24,21 @@ const login_dto_1 = require("./dto/login.dto");
 const forgot_password_dto_1 = require("./dto/forgot-password.dto");
 const reset_password_dto_1 = require("./dto/reset-password.dto");
 const refresh_token_dto_1 = require("./dto/refresh-token.dto");
+const verify_otp_dto_1 = require("./dto/verify-otp.dto");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
     }
     async register(dto) {
-        return this.authService.register(dto.email, dto.password, dto.firstName, dto.lastName);
+        let firstName = dto.firstName;
+        let lastName = dto.lastName;
+        if (!firstName && dto.name) {
+            const parts = dto.name.trim().split(/\s+/);
+            firstName = parts[0];
+            lastName = parts.slice(1).join(' ') || undefined;
+        }
+        return this.authService.register(dto.email, dto.password, firstName, lastName);
     }
     async login(dto) {
         return this.authService.login(dto.email, dto.password);
@@ -43,6 +51,9 @@ let AuthController = class AuthController {
     }
     async forgotPassword(dto) {
         return this.authService.forgotPassword(dto.email);
+    }
+    async verifyOtp(dto) {
+        return this.authService.verifyResetOtp(dto.email, dto.otp);
     }
     async resetPassword(dto) {
         return this.authService.resetPassword(dto.token, dto.newPassword);
@@ -58,8 +69,8 @@ let AuthController = class AuthController {
         });
         res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
     }
-    async me(user) {
-        return { user };
+    async me(userId) {
+        return this.authService.getMe(userId);
     }
 };
 exports.AuthController = AuthController;
@@ -120,6 +131,16 @@ __decorate([
 ], AuthController.prototype, "forgotPassword", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('verify-otp'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Verify OTP for password reset, returns a one-time reset token' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [verify_otp_dto_1.VerifyOtpDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyOtp", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('reset-password'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: 'Reset password with token' }),
@@ -153,9 +174,9 @@ __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
     (0, swagger_1.ApiOperation)({ summary: 'Get current user profile' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "me", null);
 exports.AuthController = AuthController = __decorate([

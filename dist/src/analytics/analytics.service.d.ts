@@ -6,9 +6,9 @@ export declare class AnalyticsService {
         event: string;
         id: string;
         createdAt: Date;
+        userId: string | null;
         category: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue;
-        userId: string | null;
         sessionId: string | null;
         ipAddress: string | null;
         userAgent: string | null;
@@ -28,11 +28,11 @@ export declare class AnalyticsService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            status: import(".prisma/client").$Enums.JobStatus;
             s3Key: string | null;
             s3Url: string | null;
             duration: number | null;
             progress: number;
-            status: import(".prisma/client").$Enums.JobStatus;
             expiresAt: Date | null;
             projectId: string;
             resolution: import(".prisma/client").$Enums.ExportResolution;
@@ -55,12 +55,12 @@ export declare class AnalyticsService {
         exportsLast7Days: number;
         topUsers: {
             id: string;
-            email: string;
-            firstName: string;
-            lastName: string;
             _count: {
                 videoProjects: number;
             };
+            email: string;
+            firstName: string;
+            lastName: string;
         }[];
         subscriptionDistribution: {};
     }>;

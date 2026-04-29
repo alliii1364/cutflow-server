@@ -12,10 +12,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.VideosService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const storage_service_1 = require("../storage/storage.service");
+const queue_service_1 = require("../queue/queue.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
 let VideosService = class VideosService {
-    constructor(prisma, subscriptionsService) {
+    constructor(prisma, storage, queue, subscriptionsService) {
         this.prisma = prisma;
+        this.storage = storage;
+        this.queue = queue;
         this.subscriptionsService = subscriptionsService;
     }
     async createProject(userId, data) {
@@ -349,11 +353,7 @@ let VideosService = class VideosService {
                 status: 'PENDING',
             },
         });
-        const { QueueService } = await Promise.resolve().then(() => require('../queue/queue.service'));
-        const queueService = new QueueService({
-            get: (key) => process.env[key],
-        });
-        await queueService.addJob('export', 'render', {
+        await this.queue.addJob('export', 'render', {
             exportId: videoExport.id,
             projectId,
             resolution: data.resolution,
@@ -407,11 +407,7 @@ let VideosService = class VideosService {
                 lastDownloadedAt: new Date(),
             },
         });
-        const { StorageService } = await Promise.resolve().then(() => require('../storage/storage.service'));
-        const storageService = new StorageService({
-            get: (key) => process.env[key],
-        });
-        const downloadUrl = await storageService.generatePresignedDownloadUrl(videoExport.s3Key, 3600);
+        const downloadUrl = await this.storage.generatePresignedDownloadUrl(videoExport.s3Key, 3600);
         return { downloadUrl, expiresIn: 3600 };
     }
 };
@@ -419,6 +415,8 @@ exports.VideosService = VideosService;
 exports.VideosService = VideosService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        storage_service_1.StorageService,
+        queue_service_1.QueueService,
         subscriptions_service_1.SubscriptionsService])
 ], VideosService);
 //# sourceMappingURL=videos.service.js.map

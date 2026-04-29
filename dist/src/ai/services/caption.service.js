@@ -18,6 +18,7 @@ const queue_service_1 = require("../../queue/queue.service");
 const storage_service_1 = require("../../storage/storage.service");
 const openai_1 = require("openai");
 const fs = require("fs/promises");
+const fs_1 = require("fs");
 const path = require("path");
 const os = require("os");
 let CaptionService = CaptionService_1 = class CaptionService {
@@ -68,7 +69,7 @@ let CaptionService = CaptionService_1 = class CaptionService {
             const videoPath = path.join(workDir, 'video.mp4');
             await this.storage.downloadFile(videoKey, videoPath);
             const transcription = await this.openai.audio.transcriptions.create({
-                file: await fs.openAsBlob(videoPath),
+                file: (0, fs_1.createReadStream)(videoPath),
                 model: 'whisper-1',
                 language: language === 'auto' ? undefined : language,
                 response_format: 'verbose_json',
@@ -141,8 +142,10 @@ let CaptionService = CaptionService_1 = class CaptionService {
         const caption = await this.prisma.caption.update({
             where: { projectId },
             data: {
-                ...updates,
                 updatedAt: new Date(),
+                ...(updates.segments !== undefined && { segments: updates.segments }),
+                ...(updates.style !== undefined && { style: updates.style }),
+                ...(updates.isAnimated !== undefined && { isAnimated: updates.isAnimated }),
             },
         });
         return caption;

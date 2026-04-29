@@ -36,9 +36,9 @@ export declare class MusicController {
         id: string;
         createdAt: Date;
         s3Key: string;
-        style: import(".prisma/client").$Enums.MusicStyle;
-        duration: number;
         s3Url: string;
+        duration: number;
+        style: import(".prisma/client").$Enums.MusicStyle;
         isAiGenerated: boolean;
         beatTimestamps: import("@prisma/client/runtime/library").JsonValue | null;
         moodTags: string[];

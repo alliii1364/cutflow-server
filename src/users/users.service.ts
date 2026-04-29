@@ -158,12 +158,12 @@ export class UsersService {
       },
     });
 
-    // Storage usage (approximate)
-    const mediaFiles = await this.prisma.mediaFile.findMany({
+    // Storage usage — aggregate in DB instead of loading all rows into memory
+    const storageAgg = await this.prisma.mediaFile.aggregate({
       where: { project: { userId } },
-      select: { size: true },
+      _sum: { size: true },
     });
-    const storageUsed = mediaFiles.reduce((acc, f) => acc + f.size, 0);
+    const storageUsed = storageAgg._sum.size ?? 0;
 
     return {
       subscription: user.subscription,

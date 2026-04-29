@@ -11,13 +11,15 @@ const common_1 = require("@nestjs/common");
 const videos_service_1 = require("./videos.service");
 const videos_controller_1 = require("./videos.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
+const storage_module_1 = require("../storage/storage.module");
+const queue_module_1 = require("../queue/queue.module");
 const subscriptions_module_1 = require("../subscriptions/subscriptions.module");
 let VideosModule = class VideosModule {
 };
 exports.VideosModule = VideosModule;
 exports.VideosModule = VideosModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, subscriptions_module_1.SubscriptionsModule],
+        imports: [prisma_module_1.PrismaModule, storage_module_1.StorageModule, queue_module_1.QueueModule, subscriptions_module_1.SubscriptionsModule],
         providers: [videos_service_1.VideosService],
         controllers: [videos_controller_1.VideosController],
         exports: [videos_service_1.VideosService],

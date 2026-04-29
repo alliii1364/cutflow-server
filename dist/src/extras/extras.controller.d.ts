@@ -4,6 +4,8 @@ export declare class ExtrasController {
     constructor(extrasService: ExtrasService);
     getBrandKit(userId: string): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         logoUrl: string | null;
         primaryColor: string | null;
@@ -15,11 +17,11 @@ export declare class ExtrasController {
         watermarkEnabled: boolean;
         watermarkUrl: string | null;
         watermarkPosition: string;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     updateBrandKit(userId: string, body: any): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         logoUrl: string | null;
         primaryColor: string | null;
@@ -31,8 +33,6 @@ export declare class ExtrasController {
         watermarkEnabled: boolean;
         watermarkUrl: string | null;
         watermarkPosition: string;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     generateThumbnail(userId: string, projectId: string, body: {
         text?: string;
@@ -69,13 +69,13 @@ export declare class ExtrasController {
         events: string[];
     }): Promise<{
         id: string;
-        userId: string;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        url: string;
+        userId: string;
         secret: string;
+        url: string;
         events: string[];
-        isActive: boolean;
         lastTriggeredAt: Date | null;
         lastStatusCode: number | null;
         failureCount: number;
@@ -86,13 +86,13 @@ export declare class ExtrasController {
         };
     } & {
         id: string;
-        userId: string;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        url: string;
+        userId: string;
         secret: string;
+        url: string;
         events: string[];
-        isActive: boolean;
         lastTriggeredAt: Date | null;
         lastStatusCode: number | null;
         failureCount: number;
@@ -103,13 +103,13 @@ export declare class ExtrasController {
         isActive?: boolean;
     }): Promise<{
         id: string;
-        userId: string;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        url: string;
+        userId: string;
         secret: string;
+        url: string;
         events: string[];
-        isActive: boolean;
         lastTriggeredAt: Date | null;
         lastStatusCode: number | null;
         failureCount: number;
@@ -125,10 +125,10 @@ export declare class ExtrasController {
     getReferralCode(userId: string): Promise<{
         id: string;
         createdAt: Date;
-        referrerId: string;
-        referredId: string;
         referralCode: string;
         bonusCreditsGranted: boolean;
+        referredId: string;
+        referrerId: string;
     }>;
     applyReferralCode(userId: string, body: {
         code: string;

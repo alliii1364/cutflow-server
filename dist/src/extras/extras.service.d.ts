@@ -11,6 +11,8 @@ export declare class ExtrasService {
     constructor(prisma: PrismaService, queue: QueueService, storage: StorageService, configService: ConfigService);
     getBrandKit(userId: string): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         logoUrl: string | null;
         primaryColor: string | null;
@@ -22,8 +24,6 @@ export declare class ExtrasService {
         watermarkEnabled: boolean;
         watermarkUrl: string | null;
         watermarkPosition: string;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     updateBrandKit(userId: string, data: {
         logoUrl?: string;
@@ -38,6 +38,8 @@ export declare class ExtrasService {
         watermarkPosition?: string;
     }): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         logoUrl: string | null;
         primaryColor: string | null;
@@ -49,8 +51,6 @@ export declare class ExtrasService {
         watermarkEnabled: boolean;
         watermarkUrl: string | null;
         watermarkPosition: string;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     generateThumbnail(userId: string, projectId: string, options: {
         text?: string;
@@ -82,13 +82,13 @@ export declare class ExtrasService {
     }>;
     createWebhook(userId: string, url: string, events: string[]): Promise<{
         id: string;
-        userId: string;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        url: string;
+        userId: string;
         secret: string;
+        url: string;
         events: string[];
-        isActive: boolean;
         lastTriggeredAt: Date | null;
         lastStatusCode: number | null;
         failureCount: number;
@@ -99,13 +99,13 @@ export declare class ExtrasService {
         };
     } & {
         id: string;
-        userId: string;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        url: string;
+        userId: string;
         secret: string;
+        url: string;
         events: string[];
-        isActive: boolean;
         lastTriggeredAt: Date | null;
         lastStatusCode: number | null;
         failureCount: number;
@@ -116,13 +116,13 @@ export declare class ExtrasService {
         isActive?: boolean;
     }): Promise<{
         id: string;
-        userId: string;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        url: string;
+        userId: string;
         secret: string;
+        url: string;
         events: string[];
-        isActive: boolean;
         lastTriggeredAt: Date | null;
         lastStatusCode: number | null;
         failureCount: number;
@@ -138,10 +138,10 @@ export declare class ExtrasService {
     getReferralCode(userId: string): Promise<{
         id: string;
         createdAt: Date;
-        referrerId: string;
-        referredId: string;
         referralCode: string;
         bonusCreditsGranted: boolean;
+        referredId: string;
+        referrerId: string;
     }>;
     private generateReferralCode;
     applyReferralCode(userId: string, code: string): Promise<{

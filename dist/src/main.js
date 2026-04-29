@@ -8,8 +8,18 @@ const app_module_1 = require("./app.module");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);
+    const rawOrigin = configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const allowedOrigins = new Set(rawOrigin.split(',').map((o) => o.trim()));
     app.enableCors({
-        origin: configService.get('FRONTEND_URL') || 'http://localhost:5173',
+        origin: (origin, callback) => {
+            if (!origin)
+                return callback(null, true);
+            if (allowedOrigins.has(origin))
+                return callback(null, true);
+            if (/^https:\/\/[a-z0-9-]+(\.vercel\.app)$/.test(origin))
+                return callback(null, true);
+            callback(new Error(`CORS: origin ${origin} not allowed`));
+        },
         credentials: true,
     });
     app.useGlobalPipes(new common_1.ValidationPipe({
@@ -21,18 +31,22 @@ async function bootstrap() {
         type: common_1.VersioningType.URI,
         defaultVersion: '1',
     });
-    const swaggerConfig = new swagger_1.DocumentBuilder()
-        .setTitle('ShowMeLive API')
-        .setDescription('AI Video Creation Platform API')
-        .setVersion('1.0')
-        .addBearerAuth()
-        .build();
-    const document = swagger_1.SwaggerModule.createDocument(app, swaggerConfig);
-    swagger_1.SwaggerModule.setup('api/docs', app, document);
     const port = configService.get('PORT') || 3000;
+    if (configService.get('NODE_ENV') !== 'production') {
+        const swaggerConfig = new swagger_1.DocumentBuilder()
+            .setTitle('CutFlow API')
+            .setDescription('AI Video Creation Platform API')
+            .setVersion('1.0')
+            .addBearerAuth()
+            .build();
+        const document = swagger_1.SwaggerModule.createDocument(app, swaggerConfig);
+        swagger_1.SwaggerModule.setup('api/docs', app, document);
+    }
     await app.listen(port);
-    console.log(`🚀 Application is running on: http://localhost:${port}`);
-    console.log(`📚 Swagger docs available at: http://localhost:${port}/api/docs`);
+    console.log(`🚀 Application running on: http://localhost:${port}`);
+    if (configService.get('NODE_ENV') !== 'production') {
+        console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
+    }
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

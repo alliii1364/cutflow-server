@@ -8,9 +8,9 @@ export declare class NotificationsService {
         data: {
             id: string;
             createdAt: Date;
+            userId: string;
             type: import(".prisma/client").$Enums.NotificationType;
             metadata: import("@prisma/client/runtime/library").JsonValue;
-            userId: string;
             title: string;
             message: string;
             isRead: boolean;
@@ -27,9 +27,9 @@ export declare class NotificationsService {
     markAsRead(userId: string, notificationId: string): Promise<{
         id: string;
         createdAt: Date;
+        userId: string;
         type: import(".prisma/client").$Enums.NotificationType;
         metadata: import("@prisma/client/runtime/library").JsonValue;
-        userId: string;
         title: string;
         message: string;
         isRead: boolean;

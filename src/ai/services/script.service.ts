@@ -143,7 +143,7 @@ Provide output in JSON format with: title, content, estimatedDuration, wordCount
         create: {
           projectId,
           title: script.title,
-          content: script.content,
+          generatedScript: script.content,
           tone: request.tone,
           language: request.language || 'en',
           estimatedDuration: script.estimatedDuration,
@@ -154,7 +154,7 @@ Provide output in JSON format with: title, content, estimatedDuration, wordCount
         },
         update: {
           title: script.title,
-          content: script.content,
+          generatedScript: script.content,
           tone: request.tone,
           language: request.language || 'en',
           estimatedDuration: script.estimatedDuration,
@@ -264,8 +264,9 @@ Provide output as JSON array with format: [{ text, type (question|statistic|stor
     const script = await this.prisma.aIScript.update({
       where: { projectId },
       data: {
-        ...updates,
         updatedAt: new Date(),
+        ...(updates.title !== undefined && { title: updates.title }),
+        ...(updates.content !== undefined && { generatedScript: updates.content }),
       },
     });
 

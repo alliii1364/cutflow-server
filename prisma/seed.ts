@@ -1,130 +1,250 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  console.log('🌱 Starting database seed...\n');
+// ─── Free stock videos (Google Cloud Storage sample bucket) ──────────────────
+// These are publicly accessible MP4 files with proper CORS headers.
+const VIDEOS = {
+  // Short action / motion clips (~15 s each, ~1-3 MB)
+  blazes:    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  escapes:   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+  fun:       'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+  joyrides:  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+  meltdowns: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+  // Slightly longer lifestyle / review style clips (~30-60 s)
+  bullrun:   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+  vw:        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4',
+  subaru:    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+  grand:     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4',
+  elephants: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+};
 
-  // Seed B-roll Library
+// Thumbnail: real photographs seeded by keyword via picsum.photos
+const thumb = (seed: string) =>
+  `https://picsum.photos/seed/${encodeURIComponent(seed)}/320/180`;
+
+async function main() {
+  console.log('🌱 Seeding database for demo…\n');
+
+  await seedPlans();
+  await seedDemoUser();
   await seedBrollLibrary();
 
-  console.log('\n✅ Database seed completed!');
+  console.log('\n✅ Seed complete!');
+  console.log('   Demo login → demo@cutflow.app / Demo1234!');
 }
 
-async function seedBrollLibrary() {
-  console.log('📚 Seeding B-roll Library...');
+// ─── Plans ────────────────────────────────────────────────────────────────────
+async function seedPlans() {
+  console.log('📋 Seeding plans…');
 
-  // Check if already seeded
-  const existingCategories = await prisma.brollCategory.count();
-  if (existingCategories > 0) {
-    console.log('   B-roll library already seeded, skipping...');
+  const existing = await prisma.plan.findFirst({ where: { tier: 'FREE' } });
+  if (existing) {
+    console.log('   Plans already exist, skipping.');
     return;
   }
 
-  // Create categories with subcategories and items
-  const categories = [
+  await prisma.plan.createMany({
+    data: [
+      {
+        name: 'Free',
+        tier: 'FREE',
+        priceMonthly: 0,
+        priceYearly: 0,
+        videoLimit: 3,
+        maxVideoDuration: 60,
+        maxStorageGb: 1,
+        includesAiEditing: false,
+        includesAiCaptions: false,
+        includesAiVoice: false,
+        includesAiAvatar: false,
+        includesAiMusic: false,
+        includes4K: false,
+        sortOrder: 0,
+      },
+      {
+        name: 'Starter',
+        tier: 'STARTER',
+        priceMonthly: 19,
+        priceYearly: 190,
+        videoLimit: 20,
+        maxVideoDuration: 300,
+        maxStorageGb: 10,
+        includesAiEditing: true,
+        includesAiCaptions: true,
+        includesAiVoice: false,
+        includesAiAvatar: false,
+        includesAiMusic: false,
+        includes4K: false,
+        sortOrder: 1,
+      },
+      {
+        name: 'Pro',
+        tier: 'PRO',
+        priceMonthly: 49,
+        priceYearly: 490,
+        videoLimit: 100,
+        maxVideoDuration: 600,
+        maxStorageGb: 50,
+        includesAiEditing: true,
+        includesAiCaptions: true,
+        includesAiVoice: true,
+        includesAiAvatar: true,
+        includesAiMusic: true,
+        includes4K: true,
+        sortOrder: 2,
+      },
+    ],
+    skipDuplicates: true,
+  });
+
+  console.log('   ✅ Created Free, Starter, Pro plans.');
+}
+
+// ─── Demo user ────────────────────────────────────────────────────────────────
+async function seedDemoUser() {
+  console.log('👤 Seeding demo user…');
+
+  const email = 'demo@cutflow.app';
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    console.log('   Demo user already exists, skipping.');
+    return;
+  }
+
+  const freePlan = await prisma.plan.findFirst({ where: { tier: 'FREE' } });
+  if (!freePlan) throw new Error('Free plan not found — run seedPlans first');
+
+  const passwordHash = await bcrypt.hash('Demo1234!', 10);
+
+  await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      firstName: 'Demo',
+      lastName: 'User',
+      emailVerified: true,
+      subscription: {
+        create: {
+          planId: freePlan.id,
+          status: 'ACTIVE',
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        },
+      },
+    },
+  });
+
+  console.log('   ✅ demo@cutflow.app / Demo1234!');
+}
+
+// ─── B-roll library ───────────────────────────────────────────────────────────
+async function seedBrollLibrary() {
+  console.log('🎬 Seeding B-roll library…');
+
+  const existingCount = await prisma.brollCategory.count();
+  if (existingCount > 0) {
+    console.log('   B-roll library already seeded, skipping.');
+    return;
+  }
+
+  const library = [
     {
       name: 'Nature',
-      subcategories: [
+      items: [
         {
-          name: 'Landscapes',
+          subcategory: 'Landscapes',
           items: [
-            { name: 'Mountain Sunrise', type: 'video', isPremium: false },
-            { name: 'Ocean Waves', type: 'video', isPremium: false },
-            { name: 'Forest Path', type: 'video', isPremium: true },
+            { name: 'Mountain Drive',   url: VIDEOS.joyrides,  thumb: thumb('mountain-road'),   duration: 15 },
+            { name: 'Scenic Escape',    url: VIDEOS.escapes,   thumb: thumb('nature-landscape'), duration: 15 },
+            { name: 'Open Roads',       url: VIDEOS.subaru,    thumb: thumb('forest-road'),      duration: 45 },
           ],
         },
         {
-          name: 'Weather',
+          subcategory: 'Action Outdoors',
           items: [
-            { name: 'Rainy Day', type: 'video', isPremium: false },
-            { name: 'Snow Falling', type: 'video', isPremium: true },
-            { name: 'Cloudy Sky', type: 'video', isPremium: false },
+            { name: 'Wild Blaze',       url: VIDEOS.blazes,    thumb: thumb('fire-outdoor'),     duration: 15 },
+            { name: 'Fun In Nature',    url: VIDEOS.fun,       thumb: thumb('outdoor-fun'),      duration: 60, isPremium: true },
           ],
         },
       ],
     },
     {
       name: 'Business',
-      subcategories: [
+      items: [
         {
-          name: 'Office',
+          subcategory: 'Automotive & Review',
           items: [
-            { name: 'Team Meeting', type: 'video', isPremium: false },
-            { name: 'Working on Laptop', type: 'video', isPremium: false },
-            { name: 'Modern Office', type: 'video', isPremium: true },
+            { name: 'Product Review',   url: VIDEOS.vw,        thumb: thumb('car-review'),       duration: 55 },
+            { name: 'Test Drive',       url: VIDEOS.subaru,    thumb: thumb('test-drive'),       duration: 45 },
+            { name: 'Car Showcase',     url: VIDEOS.grand,     thumb: thumb('car-showroom'),     duration: 60, isPremium: true },
           ],
         },
         {
-          name: 'Technology',
+          subcategory: 'Events',
           items: [
-            { name: 'Typing Code', type: 'video', isPremium: false },
-            { name: 'Data Center', type: 'video', isPremium: true },
-            { name: 'Server Room', type: 'video', isPremium: true },
+            { name: 'Rally Event',      url: VIDEOS.bullrun,   thumb: thumb('event-crowd'),      duration: 30 },
+            { name: 'Crowd Energy',     url: VIDEOS.meltdowns, thumb: thumb('crowd-event'),      duration: 15 },
           ],
         },
       ],
     },
     {
-      name: 'Lifestyle',
-      subcategories: [
+      name: 'Cinematic',
+      items: [
         {
-          name: 'People',
+          subcategory: 'Short Films',
           items: [
-            { name: 'Walking in City', type: 'video', isPremium: false },
-            { name: 'Coffee Shop', type: 'video', isPremium: false },
-            { name: 'Reading Book', type: 'video', isPremium: true },
+            { name: 'Elephants Dream',  url: VIDEOS.elephants, thumb: thumb('fantasy-film'),     duration: 60, isPremium: true },
+            { name: 'City Rush',        url: VIDEOS.joyrides,  thumb: thumb('city-night'),       duration: 15 },
           ],
         },
         {
-          name: 'Food',
+          subcategory: 'Mood Clips',
           items: [
-            { name: 'Cooking', type: 'video', isPremium: false },
-            { name: 'Restaurant', type: 'video', isPremium: true },
-            { name: 'Fresh Vegetables', type: 'video', isPremium: false },
+            { name: 'Dramatic Escape',  url: VIDEOS.escapes,   thumb: thumb('dramatic-sky'),     duration: 15 },
+            { name: 'High Energy',      url: VIDEOS.blazes,    thumb: thumb('abstract-energy'),  duration: 15 },
+            { name: 'Chill Vibes',      url: VIDEOS.fun,       thumb: thumb('sunset-calm'),      duration: 60 },
           ],
         },
       ],
     },
   ];
 
-  for (const [catIndex, catData] of categories.entries()) {
+  let catIdx = 0;
+  for (const catData of library) {
     const category = await prisma.brollCategory.create({
-      data: {
-        name: catData.name,
-        sortOrder: catIndex,
-      },
+      data: { name: catData.name, sortOrder: catIdx++ },
     });
+    console.log(`   📁 ${category.name}`);
 
-    console.log(`   ✅ Created category: ${category.name}`);
-
-    for (const [subIndex, subData] of catData.subcategories.entries()) {
+    let subIdx = 0;
+    for (const subData of catData.items) {
       const subcategory = await prisma.brollSubcategory.create({
-        data: {
-          categoryId: category.id,
-          name: subData.name,
-          sortOrder: subIndex,
-        },
+        data: { categoryId: category.id, name: subData.subcategory, sortOrder: subIdx++ },
       });
 
-      console.log(`      📁 Created subcategory: ${subcategory.name}`);
+      let itemIdx = 0;
+      for (const item of subData.items) {
+        // s3Key must be unique — use a deterministic slug
+        const slug = `demo/${category.name.toLowerCase()}/${subData.subcategory.toLowerCase().replace(/\s+/g, '-')}/${item.name.toLowerCase().replace(/\s+/g, '-')}`;
 
-      for (const [itemIndex, itemData] of subData.items.entries()) {
         await prisma.brollItem.create({
           data: {
             subcategoryId: subcategory.id,
-            name: itemData.name,
-            description: `${itemData.name} - ${subData.name}`,
-            s3Key: `broll/${category.id}/${subcategory.id}/${itemData.name.toLowerCase().replace(/\s+/g, '-')}.mp4`,
-            s3Url: `https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4`,
-            thumbnailUrl: `https://via.placeholder.com/320x180/4F46E5/ffffff?text=${encodeURIComponent(itemData.name)}`,
-            type: itemData.type,
-            isPremium: itemData.isPremium,
-            sortOrder: itemIndex,
+            name: item.name,
+            description: `${item.name} — free stock clip`,
+            s3Key: slug,
+            s3Url: item.url,
+            thumbnailUrl: item.thumb,
+            type: 'video',
+            isPremium: (item as any).isPremium ?? false,
+            duration: item.duration,
+            sortOrder: itemIdx++,
           },
         });
-
-        console.log(`         🎬 Created item: ${itemData.name}${itemData.isPremium ? ' (Pro)' : ''}`);
+        console.log(`      🎬 ${item.name}`);
       }
     }
   }
@@ -132,9 +252,7 @@ async function seedBrollLibrary() {
 
 main()
   .catch((e) => {
-    console.error('❌ Seed error:', e);
+    console.error('❌ Seed failed:', e);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .finally(() => prisma.$disconnect());

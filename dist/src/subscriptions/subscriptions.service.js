@@ -18,7 +18,10 @@ let SubscriptionsService = class SubscriptionsService {
     constructor(prisma, configService) {
         this.prisma = prisma;
         this.configService = configService;
-        this.stripe = Stripe(this.configService.get('STRIPE_SECRET_KEY') || '');
+        const stripeKey = this.configService.get('STRIPE_SECRET_KEY');
+        if (stripeKey) {
+            this.stripe = Stripe(stripeKey);
+        }
     }
     async getPlans() {
         return this.prisma.plan.findMany({
@@ -117,6 +120,17 @@ let SubscriptionsService = class SubscriptionsService {
         const planId = session.metadata?.planId;
         if (!userId || !planId)
             return;
+        let periodStart = new Date();
+        let periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        if (session.subscription) {
+            try {
+                const stripeSub = await this.stripe.subscriptions.retrieve(session.subscription);
+                periodStart = new Date(stripeSub.current_period_start * 1000);
+                periodEnd = new Date(stripeSub.current_period_end * 1000);
+            }
+            catch {
+            }
+        }
         await this.prisma.subscription.update({
             where: { userId },
             data: {
@@ -124,8 +138,8 @@ let SubscriptionsService = class SubscriptionsService {
                 stripeCustomerId: session.customer,
                 stripeSubscriptionId: session.subscription,
                 status: 'ACTIVE',
-                currentPeriodStart: new Date(),
-                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                currentPeriodStart: periodStart,
+                currentPeriodEnd: periodEnd,
             },
         });
     }

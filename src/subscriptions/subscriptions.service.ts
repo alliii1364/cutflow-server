@@ -13,7 +13,10 @@ export class SubscriptionsService {
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {
-    this.stripe = Stripe(this.configService.get('STRIPE_SECRET_KEY') || '');
+    const stripeKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+    if (stripeKey) {
+      this.stripe = Stripe(stripeKey);
+    }
   }
 
   async getPlans() {
@@ -131,6 +134,20 @@ export class SubscriptionsService {
 
     if (!userId || !planId) return;
 
+    // Fetch the actual Stripe subscription to get real period dates
+    let periodStart = new Date();
+    let periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    if (session.subscription) {
+      try {
+        const stripeSub = await this.stripe.subscriptions.retrieve(session.subscription as string);
+        periodStart = new Date(stripeSub.current_period_start * 1000);
+        periodEnd = new Date(stripeSub.current_period_end * 1000);
+      } catch {
+        // fallback to default dates on Stripe API failure
+      }
+    }
+
     await this.prisma.subscription.update({
       where: { userId },
       data: {
@@ -138,8 +155,8 @@ export class SubscriptionsService {
         stripeCustomerId: session.customer as string,
         stripeSubscriptionId: session.subscription as string,
         status: 'ACTIVE',
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        currentPeriodStart: periodStart,
+        currentPeriodEnd: periodEnd,
       },
     });
   }

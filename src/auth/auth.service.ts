@@ -149,28 +149,59 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      // Don't reveal if user exists
-      return { message: 'If an account exists, a reset email has been sent' };
+      return { message: 'If an account exists, a reset code has been sent' };
     }
 
-    const token = uuidv4();
+    // Invalidate any existing tokens for this user
+    await this.prisma.passwordResetToken.updateMany({
+      where: { userId: user.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
     await this.prisma.passwordResetToken.create({
       data: {
         userId: user.id,
-        token,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        token: otp,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
       },
     });
 
-    // TODO: Send email with reset link
-    // await this.notificationsService.sendPasswordResetEmail(email, token);
+    // TODO: Send otp via email
+    // await this.notificationsService.sendPasswordResetEmail(email, otp);
 
-    return { message: 'If an account exists, a reset email has been sent' };
+    return { message: 'If an account exists, a reset code has been sent' };
+  }
+
+  async verifyResetOtp(email: string, otp: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid code');
+    }
+
+    const record = await this.prisma.passwordResetToken.findFirst({
+      where: { userId: user.id, token: otp, usedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!record || record.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired code');
+    }
+
+    // Exchange OTP for a single-use reset token
+    const resetToken = uuidv4();
+    await this.prisma.passwordResetToken.update({
+      where: { id: record.id },
+      data: { token: resetToken },
+    });
+
+    return { resetToken };
   }
 
   async resetPassword(token: string, newPassword: string) {
@@ -222,8 +253,33 @@ export class AuthService {
     };
   }
 
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+        role: true,
+        emailVerified: true,
+        isActive: true,
+        createdAt: true,
+        subscription: { include: { plan: true } },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return { user };
+  }
+
   private async saveRefreshToken(userId: string, token: string) {
-    const days = parseInt(this.configService.get('JWT_REFRESH_EXPIRATION') || '7');
+    const raw = this.configService.get<string>('JWT_REFRESH_EXPIRATION') || '7d';
+    const days = parseInt(raw, 10) || 7; // handles '7d' → 7, '30d' → 30
     const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
     await this.prisma.refreshToken.create({

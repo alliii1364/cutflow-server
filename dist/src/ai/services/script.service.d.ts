@@ -39,34 +39,42 @@ export declare class ScriptService {
     generateHooks(projectId: string, sourceContent: string, count?: number): Promise<GeneratedHook[]>;
     getScript(projectId: string): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string | null;
         projectId: string;
+        language: string;
         sourceType: string;
         sourceContent: string | null;
+        sourceUrl: string | null;
         tone: string;
         generatedScript: string;
+        suggestedBrolls: string[];
         hookVariants: import("@prisma/client/runtime/library").JsonValue;
         selectedHookIndex: number;
         wordCount: number | null;
         estimatedDuration: number | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     updateScript(projectId: string, updates: {
         content?: string;
         title?: string;
     }): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string | null;
         projectId: string;
+        language: string;
         sourceType: string;
         sourceContent: string | null;
+        sourceUrl: string | null;
         tone: string;
         generatedScript: string;
+        suggestedBrolls: string[];
         hookVariants: import("@prisma/client/runtime/library").JsonValue;
         selectedHookIndex: number;
         wordCount: number | null;
         estimatedDuration: number | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     deleteScript(projectId: string): Promise<{
         success: boolean;

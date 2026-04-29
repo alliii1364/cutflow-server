@@ -5,10 +5,6 @@ export declare class SubscriptionsController {
     getPlans(): Promise<{
         id: string;
         name: string;
-        sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         tier: import(".prisma/client").$Enums.PlanTier;
         stripePriceId: string | null;
         priceMonthly: import("@prisma/client/runtime/library").Decimal;
@@ -25,15 +21,15 @@ export declare class SubscriptionsController {
         includesBrandKit: boolean;
         includesTeamWorkspaces: boolean;
         features: import("@prisma/client/runtime/library").JsonValue;
+        isActive: boolean;
+        sortOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
     }[]>;
     getMySubscription(userId: string): Promise<{
         plan: {
             id: string;
             name: string;
-            sortOrder: number;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             tier: import(".prisma/client").$Enums.PlanTier;
             stripePriceId: string | null;
             priceMonthly: import("@prisma/client/runtime/library").Decimal;
@@ -50,6 +46,10 @@ export declare class SubscriptionsController {
             includesBrandKit: boolean;
             includesTeamWorkspaces: boolean;
             features: import("@prisma/client/runtime/library").JsonValue;
+            isActive: boolean;
+            sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
         };
     } & {
         id: string;

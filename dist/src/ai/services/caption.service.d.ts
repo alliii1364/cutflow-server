@@ -38,13 +38,13 @@ export declare class CaptionService {
         style?: any;
     }): Promise<void>;
     getCaptions(projectId: string): Promise<{
-        projectId: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        projectId: string;
         language: string;
-        style: import("@prisma/client/runtime/library").JsonValue;
         segments: import("@prisma/client/runtime/library").JsonValue;
+        style: import("@prisma/client/runtime/library").JsonValue;
         keywords: string[];
         isAnimated: boolean;
         wordHighlighting: boolean;
@@ -55,13 +55,13 @@ export declare class CaptionService {
         style?: any;
         isAnimated?: boolean;
     }): Promise<{
-        projectId: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        projectId: string;
         language: string;
-        style: import("@prisma/client/runtime/library").JsonValue;
         segments: import("@prisma/client/runtime/library").JsonValue;
+        style: import("@prisma/client/runtime/library").JsonValue;
         keywords: string[];
         isAnimated: boolean;
         wordHighlighting: boolean;

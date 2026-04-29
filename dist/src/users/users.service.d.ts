@@ -19,11 +19,7 @@ export declare class UsersService {
         subscription: {
             plan: {
                 id: string;
-                createdAt: Date;
-                updatedAt: Date;
                 name: string;
-                isActive: boolean;
-                sortOrder: number;
                 tier: import(".prisma/client").$Enums.PlanTier;
                 stripePriceId: string | null;
                 priceMonthly: import("@prisma/client/runtime/library").Decimal;
@@ -40,22 +36,26 @@ export declare class UsersService {
                 includesBrandKit: boolean;
                 includesTeamWorkspaces: boolean;
                 features: import("@prisma/client/runtime/library").JsonValue;
+                isActive: boolean;
+                sortOrder: number;
+                createdAt: Date;
+                updatedAt: Date;
             };
         } & {
             id: string;
-            userId: string;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.SubscriptionStatus;
-            planId: string;
             stripeCustomerId: string | null;
             stripeSubscriptionId: string | null;
+            status: import(".prisma/client").$Enums.SubscriptionStatus;
             videoCount: number;
             trialEndsAt: Date | null;
             currentPeriodStart: Date | null;
             currentPeriodEnd: Date | null;
             canceledAt: Date | null;
             cancelAtPeriodEnd: boolean;
+            planId: string;
+            userId: string;
         };
         videoQuota: {
             used: number;
@@ -69,26 +69,26 @@ export declare class UsersService {
         exportedVideos: number;
         recentExports: ({
             project: {
-                title: string;
                 thumbnailUrl: string;
+                title: string;
             };
         } & {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             status: import(".prisma/client").$Enums.JobStatus;
-            progress: number;
-            errorMessage: string | null;
-            projectId: string;
             s3Key: string | null;
-            duration: number | null;
             s3Url: string | null;
+            duration: number | null;
+            progress: number;
+            expiresAt: Date | null;
+            projectId: string;
             resolution: import(".prisma/client").$Enums.ExportResolution;
             platform: import(".prisma/client").$Enums.Platform | null;
             fileSize: number | null;
+            errorMessage: string | null;
             renderStartedAt: Date | null;
             renderCompletedAt: Date | null;
-            expiresAt: Date | null;
             downloadCount: number;
             lastDownloadedAt: Date | null;
         })[];

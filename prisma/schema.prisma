@@ -311,10 +311,14 @@ model Caption {
 model AIScript {
   id                    String      @id @default(uuid())
   projectId             String      @unique
+  title                 String?
   sourceType            String      // url, text, product_page
   sourceContent         String?
+  sourceUrl             String?
   tone                  String      // sales, educational, emotional, storytelling
+  language              String      @default("en")
   generatedScript       String
+  suggestedBrolls       String[]    @default([])
   hookVariants          Json        @default("[]")  // Array of hook variations
   selectedHookIndex     Int         @default(0)
   wordCount             Int?

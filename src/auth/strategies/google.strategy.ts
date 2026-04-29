@@ -11,9 +11,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     private prisma: PrismaService,
   ) {
     super({
-      clientID: configService.get('GOOGLE_CLIENT_ID') || '',
-      clientSecret: configService.get('GOOGLE_CLIENT_SECRET') || '',
-      callbackURL: configService.get('GOOGLE_CALLBACK_URL') || 'http://localhost:3000/auth/google/callback',
+      clientID: configService.get<string>('GOOGLE_CLIENT_ID') || '__not_configured__',
+      clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET') || '__not_configured__',
+      callbackURL: configService.get('GOOGLE_CALLBACK_URL') || 'http://localhost:3000/v1/auth/google/callback',
       scope: ['email', 'profile'],
     });
   }
@@ -24,6 +24,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {
+    if (!this.configService.get<string>('GOOGLE_CLIENT_ID')) {
+      return done(new Error('Google OAuth is not configured on this server'), null);
+    }
+
     const { id, emails, name, photos } = profile;
 
     const email = emails[0].value;
@@ -51,6 +55,14 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
           include: { subscription: { include: { plan: true } } },
         });
       } else {
+        // Get or create the free plan
+        let freePlan = await this.prisma.plan.findFirst({ where: { tier: 'FREE' } });
+        if (!freePlan) {
+          freePlan = await this.prisma.plan.create({
+            data: { name: 'Free', tier: 'FREE', priceMonthly: 0, priceYearly: 0, videoLimit: 1, maxVideoDuration: 60 },
+          });
+        }
+
         // Create new user
         user = await this.prisma.user.create({
           data: {
@@ -62,7 +74,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             emailVerified: true,
             subscription: {
               create: {
-                plan: { connect: { id: 'free-plan-id' } }, // Will need seed
+                planId: freePlan.id,
                 status: 'INACTIVE',
               },
             },

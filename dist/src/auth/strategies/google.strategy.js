@@ -18,15 +18,18 @@ const prisma_service_1 = require("../../prisma/prisma.service");
 let GoogleStrategy = class GoogleStrategy extends (0, passport_1.PassportStrategy)(passport_google_oauth20_1.Strategy, 'google') {
     constructor(configService, prisma) {
         super({
-            clientID: configService.get('GOOGLE_CLIENT_ID') || '',
-            clientSecret: configService.get('GOOGLE_CLIENT_SECRET') || '',
-            callbackURL: configService.get('GOOGLE_CALLBACK_URL') || 'http://localhost:3000/auth/google/callback',
+            clientID: configService.get('GOOGLE_CLIENT_ID') || '__not_configured__',
+            clientSecret: configService.get('GOOGLE_CLIENT_SECRET') || '__not_configured__',
+            callbackURL: configService.get('GOOGLE_CALLBACK_URL') || 'http://localhost:3000/v1/auth/google/callback',
             scope: ['email', 'profile'],
         });
         this.configService = configService;
         this.prisma = prisma;
     }
     async validate(accessToken, refreshToken, profile, done) {
+        if (!this.configService.get('GOOGLE_CLIENT_ID')) {
+            return done(new Error('Google OAuth is not configured on this server'), null);
+        }
         const { id, emails, name, photos } = profile;
         const email = emails[0].value;
         const firstName = name.givenName;
@@ -49,6 +52,12 @@ let GoogleStrategy = class GoogleStrategy extends (0, passport_1.PassportStrateg
                 });
             }
             else {
+                let freePlan = await this.prisma.plan.findFirst({ where: { tier: 'FREE' } });
+                if (!freePlan) {
+                    freePlan = await this.prisma.plan.create({
+                        data: { name: 'Free', tier: 'FREE', priceMonthly: 0, priceYearly: 0, videoLimit: 1, maxVideoDuration: 60 },
+                    });
+                }
                 user = await this.prisma.user.create({
                     data: {
                         email,
@@ -59,7 +68,7 @@ let GoogleStrategy = class GoogleStrategy extends (0, passport_1.PassportStrateg
                         emailVerified: true,
                         subscription: {
                             create: {
-                                plan: { connect: { id: 'free-plan-id' } },
+                                planId: freePlan.id,
                                 status: 'INACTIVE',
                             },
                         },

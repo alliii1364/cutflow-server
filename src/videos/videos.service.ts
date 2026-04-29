@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
+import { QueueService } from '../queue/queue.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { VideoStatus } from '@prisma/client';
 
@@ -7,6 +9,8 @@ import { VideoStatus } from '@prisma/client';
 export class VideosService {
   constructor(
     private prisma: PrismaService,
+    private storage: StorageService,
+    private queue: QueueService,
     private subscriptionsService: SubscriptionsService,
   ) {}
 
@@ -422,14 +426,7 @@ export class VideosService {
       },
     });
 
-    // Queue render job using BullMQ through QueueService
-    // This will be picked up by VideoProcessorWorker
-    const { QueueService } = await import('../queue/queue.service');
-    const queueService = new QueueService({
-      get: (key: string) => process.env[key],
-    } as any);
-    
-    await queueService.addJob('export', 'render', {
+    await this.queue.addJob('export', 'render', {
       exportId: videoExport.id,
       projectId,
       resolution: data.resolution,
@@ -495,13 +492,7 @@ export class VideosService {
       },
     });
 
-    // Generate signed URL
-    const { StorageService } = await import('../storage/storage.service');
-    const storageService = new StorageService({
-      get: (key: string) => process.env[key],
-    } as any);
-    
-    const downloadUrl = await storageService.generatePresignedDownloadUrl(videoExport.s3Key, 3600);
+    const downloadUrl = await this.storage.generatePresignedDownloadUrl(videoExport.s3Key, 3600);
 
     return { downloadUrl, expiresIn: 3600 };
   }

@@ -17,10 +17,6 @@ export declare class JwtStrategy extends JwtStrategy_base {
             plan: {
                 id: string;
                 name: string;
-                sortOrder: number;
-                isActive: boolean;
-                createdAt: Date;
-                updatedAt: Date;
                 tier: import(".prisma/client").$Enums.PlanTier;
                 stripePriceId: string | null;
                 priceMonthly: import("@prisma/client/runtime/library").Decimal;
@@ -37,6 +33,10 @@ export declare class JwtStrategy extends JwtStrategy_base {
                 includesBrandKit: boolean;
                 includesTeamWorkspaces: boolean;
                 features: import("@prisma/client/runtime/library").JsonValue;
+                isActive: boolean;
+                sortOrder: number;
+                createdAt: Date;
+                updatedAt: Date;
             };
         } & {
             id: string;

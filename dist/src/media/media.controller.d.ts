@@ -30,36 +30,36 @@ export declare class MediaController {
     }): Promise<{
         id: string;
         createdAt: Date;
-        projectId: string;
         s3Key: string;
+        s3Url: string;
+        type: import(".prisma/client").$Enums.MediaType;
         duration: number | null;
         metadata: import("@prisma/client/runtime/library").JsonValue;
-        type: import(".prisma/client").$Enums.MediaType;
-        originalName: string;
-        s3Url: string;
-        mimeType: string;
         size: number;
+        projectId: string;
         width: number | null;
         height: number | null;
-        isPrimary: boolean;
         timelinePosition: number | null;
+        originalName: string;
+        mimeType: string;
+        isPrimary: boolean;
     }>;
     getProjectMedia(userId: string, projectId: string): Promise<{
         id: string;
         createdAt: Date;
-        projectId: string;
         s3Key: string;
+        s3Url: string;
+        type: import(".prisma/client").$Enums.MediaType;
         duration: number | null;
         metadata: import("@prisma/client/runtime/library").JsonValue;
-        type: import(".prisma/client").$Enums.MediaType;
-        originalName: string;
-        s3Url: string;
-        mimeType: string;
         size: number;
+        projectId: string;
         width: number | null;
         height: number | null;
-        isPrimary: boolean;
         timelinePosition: number | null;
+        originalName: string;
+        mimeType: string;
+        isPrimary: boolean;
     }[]>;
     deleteMedia(userId: string, mediaId: string): Promise<{
         success: boolean;

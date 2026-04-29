@@ -20,6 +20,7 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @ApiTags('Auth')
@@ -33,7 +34,15 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto.email, dto.password, dto.firstName, dto.lastName);
+    // Support a single `name` field split into first/last, or explicit firstName/lastName
+    let firstName = dto.firstName;
+    let lastName = dto.lastName;
+    if (!firstName && dto.name) {
+      const parts = dto.name.trim().split(/\s+/);
+      firstName = parts[0];
+      lastName = parts.slice(1).join(' ') || undefined;
+    }
+    return this.authService.register(dto.email, dto.password, firstName, lastName);
   }
 
   @Public()
@@ -72,6 +81,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Request password reset' })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
+  }
+
+  @Public()
+  @Post('verify-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify OTP for password reset, returns a one-time reset token' })
+  async verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyResetOtp(dto.email, dto.otp);
   }
 
   @Public()
@@ -114,7 +131,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  async me(@CurrentUser() user: any) {
-    return { user };
+  async me(@CurrentUser('id') userId: string) {
+    return this.authService.getMe(userId);
   }
 }

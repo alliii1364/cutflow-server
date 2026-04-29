@@ -5,6 +5,7 @@ import { QueueService } from '../../queue/queue.service';
 import { StorageService } from '../../storage/storage.service';
 import OpenAI from 'openai';
 import * as fs from 'fs/promises';
+import { createReadStream } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
@@ -105,7 +106,7 @@ export class CaptionService {
 
       // Call OpenAI Whisper API for transcription with word-level timestamps
       const transcription = await this.openai.audio.transcriptions.create({
-        file: await fs.openAsBlob(videoPath),
+        file: createReadStream(videoPath),
         model: 'whisper-1',
         language: language === 'auto' ? undefined : language,
         response_format: 'verbose_json',
@@ -196,8 +197,10 @@ export class CaptionService {
     const caption = await this.prisma.caption.update({
       where: { projectId },
       data: {
-        ...updates,
         updatedAt: new Date(),
+        ...(updates.segments !== undefined && { segments: updates.segments as any }),
+        ...(updates.style !== undefined && { style: updates.style }),
+        ...(updates.isAnimated !== undefined && { isAnimated: updates.isAnimated }),
       },
     });
 

@@ -33,11 +33,11 @@ export declare class AiEditingController {
     }>;
     getJobStatus(userId: string, jobId: string): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.JobStatus;
         createdAt: Date;
         updatedAt: Date;
-        projectId: string;
+        status: import(".prisma/client").$Enums.JobStatus;
         progress: number;
+        projectId: string;
         errorMessage: string | null;
         jobType: string;
         inputData: import("@prisma/client/runtime/library").JsonValue;
@@ -48,11 +48,11 @@ export declare class AiEditingController {
     }>;
     getProjectJobs(userId: string, projectId: string): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.JobStatus;
         createdAt: Date;
         updatedAt: Date;
-        projectId: string;
+        status: import(".prisma/client").$Enums.JobStatus;
         progress: number;
+        projectId: string;
         errorMessage: string | null;
         jobType: string;
         inputData: import("@prisma/client/runtime/library").JsonValue;

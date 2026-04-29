@@ -125,21 +125,42 @@ let AuthService = class AuthService {
         };
     }
     async forgotPassword(email) {
-        const user = await this.prisma.user.findUnique({
-            where: { email },
-        });
+        const user = await this.prisma.user.findUnique({ where: { email } });
         if (!user) {
-            return { message: 'If an account exists, a reset email has been sent' };
+            return { message: 'If an account exists, a reset code has been sent' };
         }
-        const token = (0, uuid_1.v4)();
+        await this.prisma.passwordResetToken.updateMany({
+            where: { userId: user.id, usedAt: null },
+            data: { usedAt: new Date() },
+        });
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
         await this.prisma.passwordResetToken.create({
             data: {
                 userId: user.id,
-                token,
-                expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+                token: otp,
+                expiresAt: new Date(Date.now() + 15 * 60 * 1000),
             },
         });
-        return { message: 'If an account exists, a reset email has been sent' };
+        return { message: 'If an account exists, a reset code has been sent' };
+    }
+    async verifyResetOtp(email, otp) {
+        const user = await this.prisma.user.findUnique({ where: { email } });
+        if (!user) {
+            throw new common_1.UnauthorizedException('Invalid code');
+        }
+        const record = await this.prisma.passwordResetToken.findFirst({
+            where: { userId: user.id, token: otp, usedAt: null },
+            orderBy: { createdAt: 'desc' },
+        });
+        if (!record || record.expiresAt < new Date()) {
+            throw new common_1.UnauthorizedException('Invalid or expired code');
+        }
+        const resetToken = (0, uuid_1.v4)();
+        await this.prisma.passwordResetToken.update({
+            where: { id: record.id },
+            data: { token: resetToken },
+        });
+        return { resetToken };
     }
     async resetPassword(token, newPassword) {
         const resetRecord = await this.prisma.passwordResetToken.findUnique({
@@ -176,8 +197,30 @@ let AuthService = class AuthService {
             expiresIn: 900,
         };
     }
+    async getMe(userId) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+                role: true,
+                emailVerified: true,
+                isActive: true,
+                createdAt: true,
+                subscription: { include: { plan: true } },
+            },
+        });
+        if (!user) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        return { user };
+    }
     async saveRefreshToken(userId, token) {
-        const days = parseInt(this.configService.get('JWT_REFRESH_EXPIRATION') || '7');
+        const raw = this.configService.get('JWT_REFRESH_EXPIRATION') || '7d';
+        const days = parseInt(raw, 10) || 7;
         const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
         await this.prisma.refreshToken.create({
             data: {
