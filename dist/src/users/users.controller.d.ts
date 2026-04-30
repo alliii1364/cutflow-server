@@ -16,6 +16,10 @@ export declare class UsersController {
             plan: {
                 id: string;
                 name: string;
+                sortOrder: number;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
                 tier: import(".prisma/client").$Enums.PlanTier;
                 stripePriceId: string | null;
                 priceMonthly: import("@prisma/client/runtime/library").Decimal;
@@ -32,10 +36,6 @@ export declare class UsersController {
                 includesBrandKit: boolean;
                 includesTeamWorkspaces: boolean;
                 features: import("@prisma/client/runtime/library").JsonValue;
-                isActive: boolean;
-                sortOrder: number;
-                createdAt: Date;
-                updatedAt: Date;
             };
         } & {
             id: string;
@@ -72,10 +72,10 @@ export declare class UsersController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.JobStatus;
             s3Key: string | null;
             s3Url: string | null;
             duration: number | null;
+            status: import(".prisma/client").$Enums.JobStatus;
             progress: number;
             expiresAt: Date | null;
             projectId: string;

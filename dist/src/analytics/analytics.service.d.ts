@@ -4,11 +4,11 @@ export declare class AnalyticsService {
     constructor(prisma: PrismaService);
     trackEvent(userId: string | undefined, event: string, category: string, metadata?: any, sessionId?: string, ipAddress?: string, userAgent?: string): Promise<{
         event: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
-        userId: string | null;
         category: string | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
+        userId: string | null;
         sessionId: string | null;
         ipAddress: string | null;
         userAgent: string | null;
@@ -28,10 +28,10 @@ export declare class AnalyticsService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.JobStatus;
             s3Key: string | null;
             s3Url: string | null;
             duration: number | null;
+            status: import(".prisma/client").$Enums.JobStatus;
             progress: number;
             expiresAt: Date | null;
             projectId: string;

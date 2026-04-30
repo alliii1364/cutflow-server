@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BrollsController = void 0;
 const common_1 = require("@nestjs/common");
@@ -18,8 +21,8 @@ let BrollsController = class BrollsController {
     constructor(mediaService) {
         this.mediaService = mediaService;
     }
-    getBrollLibrary() {
-        return this.mediaService.getBrollLibrary();
+    getBrollLibrary(q) {
+        return this.mediaService.getBrollLibrary(q);
     }
 };
 exports.BrollsController = BrollsController;
@@ -27,8 +30,10 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)('library'),
     (0, swagger_1.ApiOperation)({ summary: 'Get B-roll library with categories and items' }),
+    (0, swagger_1.ApiQuery)({ name: 'q', required: false, description: 'Search by name or tags' }),
+    __param(0, (0, common_1.Query)('q')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], BrollsController.prototype, "getBrollLibrary", null);
 exports.BrollsController = BrollsController = __decorate([

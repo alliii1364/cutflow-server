@@ -11,6 +11,10 @@ export declare class AdminController {
                 plan: {
                     id: string;
                     name: string;
+                    sortOrder: number;
+                    isActive: boolean;
+                    createdAt: Date;
+                    updatedAt: Date;
                     tier: import(".prisma/client").$Enums.PlanTier;
                     stripePriceId: string | null;
                     priceMonthly: import("@prisma/client/runtime/library").Decimal;
@@ -27,10 +31,6 @@ export declare class AdminController {
                     includesBrandKit: boolean;
                     includesTeamWorkspaces: boolean;
                     features: import("@prisma/client/runtime/library").JsonValue;
-                    isActive: boolean;
-                    sortOrder: number;
-                    createdAt: Date;
-                    updatedAt: Date;
                 };
             } & {
                 id: string;
@@ -78,6 +78,10 @@ export declare class AdminController {
             plan: {
                 id: string;
                 name: string;
+                sortOrder: number;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
                 tier: import(".prisma/client").$Enums.PlanTier;
                 stripePriceId: string | null;
                 priceMonthly: import("@prisma/client/runtime/library").Decimal;
@@ -94,10 +98,6 @@ export declare class AdminController {
                 includesBrandKit: boolean;
                 includesTeamWorkspaces: boolean;
                 features: import("@prisma/client/runtime/library").JsonValue;
-                isActive: boolean;
-                sortOrder: number;
-                createdAt: Date;
-                updatedAt: Date;
             };
         } & {
             id: string;
@@ -135,6 +135,10 @@ export declare class AdminController {
             plan: {
                 id: string;
                 name: string;
+                sortOrder: number;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
                 tier: import(".prisma/client").$Enums.PlanTier;
                 stripePriceId: string | null;
                 priceMonthly: import("@prisma/client/runtime/library").Decimal;
@@ -151,10 +155,6 @@ export declare class AdminController {
                 includesBrandKit: boolean;
                 includesTeamWorkspaces: boolean;
                 features: import("@prisma/client/runtime/library").JsonValue;
-                isActive: boolean;
-                sortOrder: number;
-                createdAt: Date;
-                updatedAt: Date;
             };
             user: {
                 id: string;
@@ -188,15 +188,15 @@ export declare class AdminController {
     createTemplate(body: any): Promise<{
         id: string;
         name: string;
-        tier: import(".prisma/client").$Enums.TemplateTier;
-        isActive: boolean;
         sortOrder: number;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         category: string;
         description: string | null;
         thumbnailUrl: string | null;
         tags: string[];
+        tier: import(".prisma/client").$Enums.TemplateTier;
         style: string | null;
         estimatedDuration: number | null;
         previewUrl: string | null;
@@ -207,15 +207,15 @@ export declare class AdminController {
     updateTemplate(templateId: string, body: any): Promise<{
         id: string;
         name: string;
-        tier: import(".prisma/client").$Enums.TemplateTier;
-        isActive: boolean;
         sortOrder: number;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         category: string;
         description: string | null;
         thumbnailUrl: string | null;
         tags: string[];
+        tier: import(".prisma/client").$Enums.TemplateTier;
         style: string | null;
         estimatedDuration: number | null;
         previewUrl: string | null;
@@ -227,9 +227,9 @@ export declare class AdminController {
         success: boolean;
     }>;
     createAsset(body: any): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         name: string;
-        tier: import(".prisma/client").$Enums.TemplateTier;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -238,13 +238,13 @@ export declare class AdminController {
         s3Url: string;
         thumbnailUrl: string | null;
         type: import(".prisma/client").$Enums.AssetType;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
         tags: string[];
+        tier: import(".prisma/client").$Enums.TemplateTier;
     }>;
     updateAsset(assetId: string, body: any): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         name: string;
-        tier: import(".prisma/client").$Enums.TemplateTier;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -253,8 +253,8 @@ export declare class AdminController {
         s3Url: string;
         thumbnailUrl: string | null;
         type: import(".prisma/client").$Enums.AssetType;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
         tags: string[];
+        tier: import(".prisma/client").$Enums.TemplateTier;
     }>;
     getFeatureFlags(): Promise<{
         id: string;

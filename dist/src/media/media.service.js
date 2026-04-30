@@ -140,7 +140,15 @@ let MediaService = class MediaService {
             message: 'AI B-roll generation queued',
         };
     }
-    async getBrollLibrary() {
+    async getBrollLibrary(q) {
+        const itemWhere = { isActive: true };
+        if (q) {
+            const term = q.trim();
+            itemWhere.OR = [
+                { name: { contains: term, mode: 'insensitive' } },
+                { tags: { has: term } },
+            ];
+        }
         const categories = await this.prisma.brollCategory.findMany({
             where: { isActive: true },
             orderBy: { sortOrder: 'asc' },
@@ -150,16 +158,24 @@ let MediaService = class MediaService {
                     orderBy: { sortOrder: 'asc' },
                     include: {
                         items: {
-                            where: { isActive: true },
+                            where: itemWhere,
                             orderBy: { sortOrder: 'asc' },
                         },
                     },
                 },
             },
         });
+        const filtered = q
+            ? categories
+                .map((cat) => ({
+                ...cat,
+                subcategories: cat.subcategories.filter((sub) => sub.items.length > 0),
+            }))
+                .filter((cat) => cat.subcategories.length > 0)
+            : categories;
         return {
             success: true,
-            data: categories.map((cat) => ({
+            data: filtered.map((cat) => ({
                 id: cat.id,
                 name: cat.name,
                 subcategories: cat.subcategories.map((sub) => ({
@@ -169,6 +185,7 @@ let MediaService = class MediaService {
                         id: item.id,
                         name: item.name,
                         description: item.description,
+                        tags: item.tags,
                         url: item.s3Url,
                         thumbnail_url: item.thumbnailUrl,
                         type: item.type,
@@ -200,6 +217,7 @@ let MediaService = class MediaService {
                 type: data.type || 'video',
                 isPremium: data.isPremium || false,
                 duration: data.duration,
+                tags: data.tags || [],
                 sortOrder,
             },
         });

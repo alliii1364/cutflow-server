@@ -15,13 +15,13 @@ export declare class VideosService {
         aspectRatio?: string;
     }): Promise<{
         mediaFiles: {
+            metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
             createdAt: Date;
             s3Key: string;
             s3Url: string;
             type: import(".prisma/client").$Enums.MediaType;
             duration: number | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue;
             size: number;
             projectId: string;
             width: number | null;
@@ -32,15 +32,15 @@ export declare class VideosService {
             isPrimary: boolean;
         }[];
     } & {
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.VideoStatus;
-        userId: string;
         description: string | null;
         thumbnailUrl: string | null;
         duration: number | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
+        status: import(".prisma/client").$Enums.VideoStatus;
+        userId: string;
         title: string;
         aspectRatio: string;
         aiEditsApplied: import("@prisma/client/runtime/library").JsonValue;
@@ -55,13 +55,13 @@ export declare class VideosService {
                 mediaFiles: number;
             };
             mediaFiles: {
+                metadata: import("@prisma/client/runtime/library").JsonValue;
                 id: string;
                 createdAt: Date;
                 s3Key: string;
                 s3Url: string;
                 type: import(".prisma/client").$Enums.MediaType;
                 duration: number | null;
-                metadata: import("@prisma/client/runtime/library").JsonValue;
                 size: number;
                 projectId: string;
                 width: number | null;
@@ -72,15 +72,15 @@ export declare class VideosService {
                 isPrimary: boolean;
             }[];
         } & {
+            metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.VideoStatus;
-            userId: string;
             description: string | null;
             thumbnailUrl: string | null;
             duration: number | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue;
+            status: import(".prisma/client").$Enums.VideoStatus;
+            userId: string;
             title: string;
             aspectRatio: string;
             aiEditsApplied: import("@prisma/client/runtime/library").JsonValue;
@@ -138,15 +138,15 @@ export declare class VideosService {
             template: {
                 id: string;
                 name: string;
-                tier: import(".prisma/client").$Enums.TemplateTier;
-                isActive: boolean;
                 sortOrder: number;
+                isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
                 category: string;
                 description: string | null;
                 thumbnailUrl: string | null;
                 tags: string[];
+                tier: import(".prisma/client").$Enums.TemplateTier;
                 style: string | null;
                 estimatedDuration: number | null;
                 previewUrl: string | null;
@@ -162,13 +162,13 @@ export declare class VideosService {
             appliedConfig: import("@prisma/client/runtime/library").JsonValue;
         };
         mediaFiles: {
+            metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
             createdAt: Date;
             s3Key: string;
             s3Url: string;
             type: import(".prisma/client").$Enums.MediaType;
             duration: number | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue;
             size: number;
             projectId: string;
             width: number | null;
@@ -182,10 +182,10 @@ export declare class VideosService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.JobStatus;
             s3Key: string | null;
             s3Url: string | null;
             duration: number | null;
+            status: import(".prisma/client").$Enums.JobStatus;
             progress: number;
             expiresAt: Date | null;
             projectId: string;
@@ -232,15 +232,15 @@ export declare class VideosService {
             bullJobId: string | null;
         }[];
     } & {
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.VideoStatus;
-        userId: string;
         description: string | null;
         thumbnailUrl: string | null;
         duration: number | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
+        status: import(".prisma/client").$Enums.VideoStatus;
+        userId: string;
         title: string;
         aspectRatio: string;
         aiEditsApplied: import("@prisma/client/runtime/library").JsonValue;
@@ -268,13 +268,13 @@ export declare class VideosService {
             confidence: number | null;
         };
         mediaFiles: {
+            metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
             createdAt: Date;
             s3Key: string;
             s3Url: string;
             type: import(".prisma/client").$Enums.MediaType;
             duration: number | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue;
             size: number;
             projectId: string;
             width: number | null;
@@ -303,15 +303,15 @@ export declare class VideosService {
             estimatedDuration: number | null;
         };
     } & {
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.VideoStatus;
-        userId: string;
         description: string | null;
         thumbnailUrl: string | null;
         duration: number | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
+        status: import(".prisma/client").$Enums.VideoStatus;
+        userId: string;
         title: string;
         aspectRatio: string;
         aiEditsApplied: import("@prisma/client/runtime/library").JsonValue;
@@ -325,15 +325,15 @@ export declare class VideosService {
         message: string;
     }>;
     updateProjectStatus(userId: string, projectId: string, status: VideoStatus): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.VideoStatus;
-        userId: string;
         description: string | null;
         thumbnailUrl: string | null;
         duration: number | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
+        status: import(".prisma/client").$Enums.VideoStatus;
+        userId: string;
         title: string;
         aspectRatio: string;
         aiEditsApplied: import("@prisma/client/runtime/library").JsonValue;
@@ -343,15 +343,15 @@ export declare class VideosService {
         voiceTrackId: string | null;
     }>;
     updateAiEdits(userId: string, projectId: string, editData: any): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.VideoStatus;
-        userId: string;
         description: string | null;
         thumbnailUrl: string | null;
         duration: number | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
+        status: import(".prisma/client").$Enums.VideoStatus;
+        userId: string;
         title: string;
         aspectRatio: string;
         aiEditsApplied: import("@prisma/client/runtime/library").JsonValue;
@@ -391,13 +391,13 @@ export declare class VideosService {
             createdAt: Date;
             updatedAt: Date;
             mediaFiles: {
+                metadata: import("@prisma/client/runtime/library").JsonValue;
                 id: string;
                 createdAt: Date;
                 s3Key: string;
                 s3Url: string;
                 type: import(".prisma/client").$Enums.MediaType;
                 duration: number | null;
-                metadata: import("@prisma/client/runtime/library").JsonValue;
                 size: number;
                 projectId: string;
                 width: number | null;
@@ -481,13 +481,13 @@ export declare class VideosService {
                 createdAt: Date;
                 updatedAt: Date;
                 mediaFiles: {
+                    metadata: import("@prisma/client/runtime/library").JsonValue;
                     id: string;
                     createdAt: Date;
                     s3Key: string;
                     s3Url: string;
                     type: import(".prisma/client").$Enums.MediaType;
                     duration: number | null;
-                    metadata: import("@prisma/client/runtime/library").JsonValue;
                     size: number;
                     projectId: string;
                     width: number | null;
@@ -572,10 +572,10 @@ export declare class VideosService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.JobStatus;
         s3Key: string | null;
         s3Url: string | null;
         duration: number | null;
+        status: import(".prisma/client").$Enums.JobStatus;
         progress: number;
         expiresAt: Date | null;
         projectId: string;
@@ -596,10 +596,10 @@ export declare class VideosService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.JobStatus;
         s3Key: string | null;
         s3Url: string | null;
         duration: number | null;
+        status: import(".prisma/client").$Enums.JobStatus;
         progress: number;
         expiresAt: Date | null;
         projectId: string;

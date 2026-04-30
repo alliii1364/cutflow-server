@@ -4,6 +4,8 @@ export declare class StorageService {
     private configService;
     private s3Client;
     private bucketName;
+    private publicUrlBase;
+    private isR2;
     constructor(configService: ConfigService);
     generatePresignedUploadUrl(folder: string, fileName: string, contentType: string, expiresIn?: number): Promise<{
         uploadUrl: string;

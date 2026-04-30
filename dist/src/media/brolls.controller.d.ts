@@ -2,7 +2,7 @@ import { MediaService } from './media.service';
 export declare class BrollsController {
     private mediaService;
     constructor(mediaService: MediaService);
-    getBrollLibrary(): Promise<{
+    getBrollLibrary(q?: string): Promise<{
         success: boolean;
         data: {
             id: string;
@@ -14,6 +14,7 @@ export declare class BrollsController {
                     id: string;
                     name: string;
                     description: string;
+                    tags: string[];
                     url: string;
                     thumbnail_url: string;
                     type: "image" | "video";

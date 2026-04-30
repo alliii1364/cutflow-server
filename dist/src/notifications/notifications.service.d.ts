@@ -6,11 +6,11 @@ export declare class NotificationsService {
     constructor(prisma: PrismaService, configService: ConfigService);
     getUserNotifications(userId: string, page?: number, limit?: number): Promise<{
         data: {
+            metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
             createdAt: Date;
-            userId: string;
             type: import(".prisma/client").$Enums.NotificationType;
-            metadata: import("@prisma/client/runtime/library").JsonValue;
+            userId: string;
             title: string;
             message: string;
             isRead: boolean;
@@ -25,11 +25,11 @@ export declare class NotificationsService {
         };
     }>;
     markAsRead(userId: string, notificationId: string): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
-        userId: string;
         type: import(".prisma/client").$Enums.NotificationType;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
+        userId: string;
         title: string;
         message: string;
         isRead: boolean;

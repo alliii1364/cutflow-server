@@ -28,13 +28,13 @@ export declare class MediaController {
         };
         isBroll?: boolean;
     }): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
         s3Key: string;
         s3Url: string;
         type: import(".prisma/client").$Enums.MediaType;
         duration: number | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
         size: number;
         projectId: string;
         width: number | null;
@@ -45,13 +45,13 @@ export declare class MediaController {
         isPrimary: boolean;
     }>;
     getProjectMedia(userId: string, projectId: string): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
         s3Key: string;
         s3Url: string;
         type: import(".prisma/client").$Enums.MediaType;
         duration: number | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
         size: number;
         projectId: string;
         width: number | null;
@@ -97,6 +97,7 @@ export declare class MediaController {
                     id: string;
                     name: string;
                     description: string;
+                    tags: string[];
                     url: string;
                     thumbnail_url: string;
                     type: "image" | "video";

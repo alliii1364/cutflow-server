@@ -21,13 +21,13 @@ export declare class MediaService {
         width?: number;
         height?: number;
     }, isBroll?: boolean): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
         s3Key: string;
         s3Url: string;
         type: import(".prisma/client").$Enums.MediaType;
         duration: number | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
         size: number;
         projectId: string;
         width: number | null;
@@ -38,13 +38,13 @@ export declare class MediaService {
         isPrimary: boolean;
     }>;
     getProjectMedia(projectId: string, userId: string): Promise<{
+        metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
         createdAt: Date;
         s3Key: string;
         s3Url: string;
         type: import(".prisma/client").$Enums.MediaType;
         duration: number | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue;
         size: number;
         projectId: string;
         width: number | null;
@@ -72,7 +72,7 @@ export declare class MediaService {
         status: string;
         message: string;
     }>;
-    getBrollLibrary(): Promise<{
+    getBrollLibrary(q?: string): Promise<{
         success: boolean;
         data: {
             id: string;
@@ -84,6 +84,7 @@ export declare class MediaService {
                     id: string;
                     name: string;
                     description: string;
+                    tags: string[];
                     url: string;
                     thumbnail_url: string;
                     type: "image" | "video";
@@ -95,16 +96,16 @@ export declare class MediaService {
     createBrollCategory(name: string, sortOrder?: number): Promise<{
         id: string;
         name: string;
-        isActive: boolean;
         sortOrder: number;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
     }>;
     createBrollSubcategory(categoryId: string, name: string, sortOrder?: number): Promise<{
         id: string;
         name: string;
-        isActive: boolean;
         sortOrder: number;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         categoryId: string;
@@ -118,20 +119,22 @@ export declare class MediaService {
         type?: string;
         isPremium?: boolean;
         duration?: number;
+        tags?: string[];
     }, sortOrder?: number): Promise<{
         id: string;
         name: string;
-        isActive: boolean;
         sortOrder: number;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        isPremium: boolean;
-        description: string | null;
         s3Key: string;
+        subcategoryId: string;
+        description: string | null;
         s3Url: string;
         thumbnailUrl: string | null;
         type: string;
+        isPremium: boolean;
         duration: number | null;
-        subcategoryId: string;
+        tags: string[];
     }>;
 }
