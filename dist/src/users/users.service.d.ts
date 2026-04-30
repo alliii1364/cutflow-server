@@ -18,8 +18,8 @@ export declare class UsersService {
     getUsageStats(userId: string): Promise<{
         subscription: {
             plan: {
-                id: string;
                 name: string;
+                id: string;
                 sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;

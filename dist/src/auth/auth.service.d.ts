@@ -57,8 +57,8 @@ export declare class AuthService {
             emailVerified: boolean;
             subscription: {
                 plan: {
-                    id: string;
                     name: string;
+                    id: string;
                     sortOrder: number;
                     isActive: boolean;
                     createdAt: Date;

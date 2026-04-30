@@ -32,18 +32,19 @@ function buildR2Client(): { client: S3Client; bucket: string; publicUrlBase: str
   };
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── URL builder ───────────────────────────────────────────────────────────────
+// Each path segment is individually encoded so spaces → %20, # → %23, etc.
+// This makes browser-safe URLs while keeping the R2 key unchanged.
 
-function slugify(str: string): string {
-  return str
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+function toPublicUrl(base: string, s3Key: string): string {
+  const encoded = s3Key.split('/').map(encodeURIComponent).join('/');
+  return `${base}/${encoded}`;
 }
 
-// Parses: "#27 _ My Clip Name. tag1, tag2, tag3.mov"
+// ── Filename parser ───────────────────────────────────────────────────────────
+// Format: "#27 _ My Clip Name. tag1, tag2, tag3.mov"
 //      →  sortOrder=27, name="My Clip Name", tags=["tag1","tag2","tag3"]
+
 function parseFilename(filename: string): { sortOrder: number; name: string; tags: string[] } {
   const stem = path.basename(filename, path.extname(filename));
 
@@ -84,8 +85,8 @@ const MIME_MAP: Record<string, string> = {
 const VIDEO_EXTS = new Set(['.mp4', '.mov', '.webm']);
 const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
 
-// ── Sidecar thumbnail lookup ──────────────────────────────────────────────────
-// Looks for a .jpg / .jpeg / .png / .webp with the same stem as the video.
+// ── Sidecar thumbnail ─────────────────────────────────────────────────────────
+// Place a .jpg / .png with the same stem next to the video for a thumbnail.
 
 function findSidecarThumbnail(videoPath: string): string | null {
   const dir = path.dirname(videoPath);
@@ -98,13 +99,12 @@ function findSidecarThumbnail(videoPath: string): string | null {
 }
 
 // ── Directory walker ──────────────────────────────────────────────────────────
-// Only collects video files; sidecar images are picked up per-video.
 
 interface VideoFile {
   absolutePath: string;
-  relativePath: string; // forward-slash, relative to ASSETS_DIR
-  category: string;     // depth-1 folder
-  subcategory: string;  // immediate parent folder
+  relativePath: string; // forward-slash, relative to ASSETS_DIR (original names preserved)
+  category: string;     // depth-1 folder, original casing
+  subcategory: string;  // immediate parent folder, original casing
 }
 
 async function walkVideos(rootDir: string): Promise<VideoFile[]> {
@@ -118,20 +118,19 @@ async function walkVideos(rootDir: string): Promise<VideoFile[]> {
         await walk(fullPath);
       } else if (entry.isFile()) {
         const ext = path.extname(entry.name).toLowerCase();
-        if (!VIDEO_EXTS.has(ext) && !IMAGE_EXTS.has(ext)) continue;
+        // Skip sidecar thumbnails — they are picked up per-video
+        if (IMAGE_EXTS.has(ext)) continue;
+        if (!VIDEO_EXTS.has(ext)) continue;
 
         const rel = path.relative(rootDir, fullPath).replace(/\\/g, '/');
         const parts = rel.split('/');
         if (parts.length < 2) continue;
 
-        // Skip standalone image files — they are only sidecar thumbnails
-        if (IMAGE_EXTS.has(ext)) continue;
-
         results.push({
           absolutePath: fullPath,
-          relativePath: rel,
-          category: parts[0],
-          subcategory: parts.length >= 3 ? parts[parts.length - 2] : parts[0],
+          relativePath: rel,                                          // e.g. "Miscellaneous/Cutting food/#27 _ Name.mov"
+          category: parts[0],                                         // "Miscellaneous"
+          subcategory: parts.length >= 3 ? parts[parts.length - 2] : parts[0], // "Cutting food"
         });
       }
     }
@@ -194,17 +193,10 @@ async function main() {
   let skipped = 0;
 
   for (const file of files) {
-    const { sortOrder, name, tags } = parseFilename(file.absolutePath);
-    const ext = path.extname(file.absolutePath).toLowerCase();
-    const contentType = MIME_MAP[ext] || 'application/octet-stream';
+    // s3Key preserves original folder and filename — matches what R2 actually stores
+    const s3Key = `brolls/${file.relativePath}`;
 
-    // URL-safe s3Key — no #, spaces, or special chars
-    const catSlug = slugify(file.category);
-    const subSlug = slugify(file.subcategory);
-    const nameSlug = sortOrder > 0 ? `${sortOrder}-${slugify(name)}` : slugify(name);
-    const s3Key = `brolls/${catSlug}/${subSlug}/${nameSlug}${ext}`;
-
-    // Skip if already in DB
+    // Skip if already in DB by exact s3Key
     const existing = await prisma.brollItem.findUnique({ where: { s3Key } });
     if (existing) {
       console.log(`  ✓ skip  ${file.relativePath}`);
@@ -212,26 +204,32 @@ async function main() {
       continue;
     }
 
+    const { sortOrder, name, tags } = parseFilename(file.absolutePath);
+    const ext = path.extname(file.absolutePath).toLowerCase();
+    const contentType = MIME_MAP[ext] || 'application/octet-stream';
+
     const category = await upsertCategory(file.category, catOrder.get(file.category) ?? 0);
     const subcategory = await upsertSubcategory(category.id, file.subcategory, 0);
 
     // Upload video
     console.log(`  ⬆️  ${file.relativePath}`);
     await uploadToR2(s3, bucket, file.absolutePath, s3Key, contentType);
-    const s3Url = `${publicUrlBase}/${s3Key}`;
 
-    // Sidecar thumbnail (same stem, image extension)
+    // s3Url is URL-encoded so # → %23, spaces → %20 — safe for browsers
+    const s3Url = toPublicUrl(publicUrlBase, s3Key);
+
+    // Sidecar thumbnail
     let thumbnailUrl: string | null = null;
     const sidecar = findSidecarThumbnail(file.absolutePath);
     if (sidecar) {
-      const thumbExt = path.extname(sidecar).toLowerCase();
-      const thumbKey = `brolls/${catSlug}/${subSlug}/${nameSlug}-thumb${thumbExt}`;
-      const thumbMime = MIME_MAP[thumbExt] || 'image/jpeg';
+      const sidecarExt = path.extname(sidecar).toLowerCase();
+      const thumbKey = s3Key.replace(/\.[^.]+$/, `-thumb${sidecarExt}`);
+      const thumbMime = MIME_MAP[sidecarExt] || 'image/jpeg';
       await uploadToR2(s3, bucket, sidecar, thumbKey, thumbMime);
-      thumbnailUrl = `${publicUrlBase}/${thumbKey}`;
+      thumbnailUrl = toPublicUrl(publicUrlBase, thumbKey);
       console.log(`  🖼️  thumbnail: ${path.basename(sidecar)}`);
     } else {
-      console.log(`  ℹ️  no sidecar thumbnail found`);
+      console.log(`  ℹ️  no sidecar thumbnail`);
     }
 
     await prisma.brollItem.create({

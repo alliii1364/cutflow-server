@@ -9,8 +9,8 @@ export declare class AdminController {
             _count: any;
             subscription: {
                 plan: {
-                    id: string;
                     name: string;
+                    id: string;
                     sortOrder: number;
                     isActive: boolean;
                     createdAt: Date;
@@ -76,8 +76,8 @@ export declare class AdminController {
     }): Promise<{
         subscription: {
             plan: {
-                id: string;
                 name: string;
+                id: string;
                 sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
@@ -133,8 +133,8 @@ export declare class AdminController {
     getAllSubscriptions(page?: number, limit?: number): Promise<{
         data: ({
             plan: {
-                id: string;
                 name: string;
+                id: string;
                 sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
@@ -186,8 +186,9 @@ export declare class AdminController {
         };
     }>;
     createTemplate(body: any): Promise<{
-        id: string;
+        tags: string[];
         name: string;
+        id: string;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -195,7 +196,6 @@ export declare class AdminController {
         category: string;
         description: string | null;
         thumbnailUrl: string | null;
-        tags: string[];
         tier: import(".prisma/client").$Enums.TemplateTier;
         style: string | null;
         estimatedDuration: number | null;
@@ -205,8 +205,9 @@ export declare class AdminController {
         industry: string | null;
     }>;
     updateTemplate(templateId: string, body: any): Promise<{
-        id: string;
+        tags: string[];
         name: string;
+        id: string;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -214,7 +215,6 @@ export declare class AdminController {
         category: string;
         description: string | null;
         thumbnailUrl: string | null;
-        tags: string[];
         tier: import(".prisma/client").$Enums.TemplateTier;
         style: string | null;
         estimatedDuration: number | null;
@@ -228,8 +228,9 @@ export declare class AdminController {
     }>;
     createAsset(body: any): Promise<{
         metadata: import("@prisma/client/runtime/library").JsonValue;
-        id: string;
+        tags: string[];
         name: string;
+        id: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -238,13 +239,13 @@ export declare class AdminController {
         s3Url: string;
         thumbnailUrl: string | null;
         type: import(".prisma/client").$Enums.AssetType;
-        tags: string[];
         tier: import(".prisma/client").$Enums.TemplateTier;
     }>;
     updateAsset(assetId: string, body: any): Promise<{
         metadata: import("@prisma/client/runtime/library").JsonValue;
-        id: string;
+        tags: string[];
         name: string;
+        id: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -253,12 +254,11 @@ export declare class AdminController {
         s3Url: string;
         thumbnailUrl: string | null;
         type: import(".prisma/client").$Enums.AssetType;
-        tags: string[];
         tier: import(".prisma/client").$Enums.TemplateTier;
     }>;
     getFeatureFlags(): Promise<{
-        id: string;
         name: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
         description: string | null;
@@ -268,8 +268,8 @@ export declare class AdminController {
         allowedUserIds: string[];
     }[]>;
     createFeatureFlag(body: any): Promise<{
-        id: string;
         name: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
         description: string | null;
@@ -279,8 +279,8 @@ export declare class AdminController {
         allowedUserIds: string[];
     }>;
     updateFeatureFlag(flagId: string, body: any): Promise<{
-        id: string;
         name: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
         description: string | null;

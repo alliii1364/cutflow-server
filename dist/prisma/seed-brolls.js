@@ -27,12 +27,9 @@ function buildR2Client() {
         publicUrlBase,
     };
 }
-function slugify(str) {
-    return str
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
+function toPublicUrl(base, s3Key) {
+    const encoded = s3Key.split('/').map(encodeURIComponent).join('/');
+    return `${base}/${encoded}`;
 }
 function parseFilename(filename) {
     const stem = path.basename(filename, path.extname(filename));
@@ -88,13 +85,13 @@ async function walkVideos(rootDir) {
             }
             else if (entry.isFile()) {
                 const ext = path.extname(entry.name).toLowerCase();
-                if (!VIDEO_EXTS.has(ext) && !IMAGE_EXTS.has(ext))
+                if (IMAGE_EXTS.has(ext))
+                    continue;
+                if (!VIDEO_EXTS.has(ext))
                     continue;
                 const rel = path.relative(rootDir, fullPath).replace(/\\/g, '/');
                 const parts = rel.split('/');
                 if (parts.length < 2)
-                    continue;
-                if (IMAGE_EXTS.has(ext))
                     continue;
                 results.push({
                     absolutePath: fullPath,
@@ -143,36 +140,33 @@ async function main() {
     let created = 0;
     let skipped = 0;
     for (const file of files) {
-        const { sortOrder, name, tags } = parseFilename(file.absolutePath);
-        const ext = path.extname(file.absolutePath).toLowerCase();
-        const contentType = MIME_MAP[ext] || 'application/octet-stream';
-        const catSlug = slugify(file.category);
-        const subSlug = slugify(file.subcategory);
-        const nameSlug = sortOrder > 0 ? `${sortOrder}-${slugify(name)}` : slugify(name);
-        const s3Key = `brolls/${catSlug}/${subSlug}/${nameSlug}${ext}`;
+        const s3Key = `brolls/${file.relativePath}`;
         const existing = await prisma.brollItem.findUnique({ where: { s3Key } });
         if (existing) {
             console.log(`  ✓ skip  ${file.relativePath}`);
             skipped++;
             continue;
         }
+        const { sortOrder, name, tags } = parseFilename(file.absolutePath);
+        const ext = path.extname(file.absolutePath).toLowerCase();
+        const contentType = MIME_MAP[ext] || 'application/octet-stream';
         const category = await upsertCategory(file.category, catOrder.get(file.category) ?? 0);
         const subcategory = await upsertSubcategory(category.id, file.subcategory, 0);
         console.log(`  ⬆️  ${file.relativePath}`);
         await uploadToR2(s3, bucket, file.absolutePath, s3Key, contentType);
-        const s3Url = `${publicUrlBase}/${s3Key}`;
+        const s3Url = toPublicUrl(publicUrlBase, s3Key);
         let thumbnailUrl = null;
         const sidecar = findSidecarThumbnail(file.absolutePath);
         if (sidecar) {
-            const thumbExt = path.extname(sidecar).toLowerCase();
-            const thumbKey = `brolls/${catSlug}/${subSlug}/${nameSlug}-thumb${thumbExt}`;
-            const thumbMime = MIME_MAP[thumbExt] || 'image/jpeg';
+            const sidecarExt = path.extname(sidecar).toLowerCase();
+            const thumbKey = s3Key.replace(/\.[^.]+$/, `-thumb${sidecarExt}`);
+            const thumbMime = MIME_MAP[sidecarExt] || 'image/jpeg';
             await uploadToR2(s3, bucket, sidecar, thumbKey, thumbMime);
-            thumbnailUrl = `${publicUrlBase}/${thumbKey}`;
+            thumbnailUrl = toPublicUrl(publicUrlBase, thumbKey);
             console.log(`  🖼️  thumbnail: ${path.basename(sidecar)}`);
         }
         else {
-            console.log(`  ℹ️  no sidecar thumbnail found`);
+            console.log(`  ℹ️  no sidecar thumbnail`);
         }
         await prisma.brollItem.create({
             data: {

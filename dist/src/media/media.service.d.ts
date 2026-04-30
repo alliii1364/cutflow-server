@@ -94,16 +94,16 @@ export declare class MediaService {
         }[];
     }>;
     createBrollCategory(name: string, sortOrder?: number): Promise<{
-        id: string;
         name: string;
+        id: string;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
     }>;
     createBrollSubcategory(categoryId: string, name: string, sortOrder?: number): Promise<{
-        id: string;
         name: string;
+        id: string;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -121,8 +121,9 @@ export declare class MediaService {
         duration?: number;
         tags?: string[];
     }, sortOrder?: number): Promise<{
-        id: string;
+        tags: string[];
         name: string;
+        id: string;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -135,6 +136,5 @@ export declare class MediaService {
         type: string;
         isPremium: boolean;
         duration: number | null;
-        tags: string[];
     }>;
 }

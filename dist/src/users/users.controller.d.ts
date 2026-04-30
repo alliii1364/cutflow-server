@@ -14,8 +14,8 @@ export declare class UsersController {
     getUsageStats(userId: string): Promise<{
         subscription: {
             plan: {
-                id: string;
                 name: string;
+                id: string;
                 sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;

@@ -129,8 +129,9 @@ export declare class VideosController {
         };
         templateApplication: {
             template: {
-                id: string;
+                tags: string[];
                 name: string;
+                id: string;
                 sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
@@ -138,7 +139,6 @@ export declare class VideosController {
                 category: string;
                 description: string | null;
                 thumbnailUrl: string | null;
-                tags: string[];
                 tier: import(".prisma/client").$Enums.TemplateTier;
                 style: string | null;
                 estimatedDuration: number | null;

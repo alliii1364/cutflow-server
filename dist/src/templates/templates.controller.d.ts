@@ -4,8 +4,9 @@ export declare class TemplatesController {
     constructor(templatesService: TemplatesService);
     getTemplates(category?: string, platform?: string, industry?: string, style?: string, tier?: string, page?: number, limit?: number): Promise<{
         data: {
-            id: string;
+            tags: string[];
             name: string;
+            id: string;
             sortOrder: number;
             isActive: boolean;
             createdAt: Date;
@@ -13,7 +14,6 @@ export declare class TemplatesController {
             category: string;
             description: string | null;
             thumbnailUrl: string | null;
-            tags: string[];
             tier: import(".prisma/client").$Enums.TemplateTier;
             style: string | null;
             estimatedDuration: number | null;
@@ -30,8 +30,9 @@ export declare class TemplatesController {
         };
     }>;
     getTemplateById(templateId: string): Promise<{
-        id: string;
+        tags: string[];
         name: string;
+        id: string;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -39,7 +40,6 @@ export declare class TemplatesController {
         category: string;
         description: string | null;
         thumbnailUrl: string | null;
-        tags: string[];
         tier: import(".prisma/client").$Enums.TemplateTier;
         style: string | null;
         estimatedDuration: number | null;
@@ -60,8 +60,9 @@ export declare class TemplatesController {
     getAssets(type?: string, category?: string, tier?: string, page?: number, limit?: number): Promise<{
         data: {
             metadata: import("@prisma/client/runtime/library").JsonValue;
-            id: string;
+            tags: string[];
             name: string;
+            id: string;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
@@ -70,7 +71,6 @@ export declare class TemplatesController {
             s3Url: string;
             thumbnailUrl: string | null;
             type: import(".prisma/client").$Enums.AssetType;
-            tags: string[];
             tier: import(".prisma/client").$Enums.TemplateTier;
         }[];
         pagination: {
@@ -82,8 +82,9 @@ export declare class TemplatesController {
     }>;
     getAssetById(assetId: string): Promise<{
         metadata: import("@prisma/client/runtime/library").JsonValue;
-        id: string;
+        tags: string[];
         name: string;
+        id: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -92,7 +93,6 @@ export declare class TemplatesController {
         s3Url: string;
         thumbnailUrl: string | null;
         type: import(".prisma/client").$Enums.AssetType;
-        tags: string[];
         tier: import(".prisma/client").$Enums.TemplateTier;
     }>;
     saveUserTemplate(userId: string, body: {
@@ -109,8 +109,9 @@ export declare class TemplatesController {
     }>;
     getUserTemplates(userId: string): Promise<({
         template: {
-            id: string;
+            tags: string[];
             name: string;
+            id: string;
             sortOrder: number;
             isActive: boolean;
             createdAt: Date;
@@ -118,7 +119,6 @@ export declare class TemplatesController {
             category: string;
             description: string | null;
             thumbnailUrl: string | null;
-            tags: string[];
             tier: import(".prisma/client").$Enums.TemplateTier;
             style: string | null;
             estimatedDuration: number | null;
