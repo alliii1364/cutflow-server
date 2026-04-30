@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache python3 make g++ netcat-openbsd
+RUN apk add --no-cache python3 make g++ netcat-openbsd openssl
 
 WORKDIR /app
 
@@ -14,13 +14,13 @@ COPY prisma ./prisma/
 RUN npm ci
 
 # Generate Prisma client
-RUN npx prisma generate
+RUN npx prisma@5.22.0 generate
 
 # Copy source code
 COPY . .
 
 # Build application
-RUN npm run build && echo "=== DIST CONTENTS ===" && ls -la dist/
+RUN npm run build && echo "=== DIST CONTENTS ===" && ls -la dist/ && ls -la dist/src/
 
 # Production stage
 FROM node:20-alpine AS production
@@ -41,7 +41,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Generate Prisma client for production
 RUN npx prisma@5.22.0 generate
@@ -67,4 +67,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 # Start application
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

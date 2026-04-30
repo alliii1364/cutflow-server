@@ -4,7 +4,7 @@ npm-debug.log
 yarn-error.log
 yarn.lock
 
-# Build output
+# Build output (local only - builder stage generates fresh)
 dist
 build
 *.tsbuildinfo
@@ -52,7 +52,7 @@ README.md
 CHANGELOG.md
 docs
 
-# Docker files (don't include in build context)
+# Docker files
 Dockerfile
 docker-compose*.yml
 .dockerignore
@@ -68,3 +68,6 @@ docker-compose*.yml
 .prettierrc
 .editorconfig
 nest-cli.json
+
+# Assets (videos are on R2, not needed in build)
+assets/
