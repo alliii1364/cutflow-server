@@ -43,7 +43,7 @@ COPY prisma ./prisma/
 RUN npm ci --only=production
 
 # Generate Prisma client for production
-RUN npx prisma generate
+RUN npx prisma@5.22.0 generate
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
