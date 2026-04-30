@@ -28,7 +28,6 @@ FROM node:20-alpine AS production
 # Install FFmpeg and other runtime dependencies
 RUN apk add --no-cache \
     ffmpeg \
-    ffprobe \
     python3 \
     curl \
     ca-certificates \
