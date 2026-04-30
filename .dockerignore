@@ -62,9 +62,6 @@ docker-compose*.yml
 *.sqlite3
 *.db
 
-# Prisma - keep schema but not migrations in build
-prisma/migrations
-
 # Misc
 .github
 .eslintrc
