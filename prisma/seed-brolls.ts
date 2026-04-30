@@ -16,7 +16,7 @@ function buildR2Client(): { client: S3Client; bucket: string; publicUrlBase: str
   if (!accountId) throw new Error('R2_ACCOUNT_ID is required in .env');
 
   const bucket = process.env.R2_BUCKET_NAME || 'cutflow-media';
-  const publicUrlBase = process.env.R2_PUBLIC_URL || '';
+  const publicUrlBase = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
 
   return {
     client: new S3Client({
@@ -32,14 +32,21 @@ function buildR2Client(): { client: S3Client; bucket: string; publicUrlBase: str
   };
 }
 
-// ── Filename parser ───────────────────────────────────────────────────────────
-// Format: "#27 _ Description. tag1, tag2, tag3.mov"
-//   → sortOrder=27, name="Description", tags=["tag1","tag2","tag3"]
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
+function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// Parses: "#27 _ My Clip Name. tag1, tag2, tag3.mov"
+//      →  sortOrder=27, name="My Clip Name", tags=["tag1","tag2","tag3"]
 function parseFilename(filename: string): { sortOrder: number; name: string; tags: string[] } {
   const stem = path.basename(filename, path.extname(filename));
 
-  // Extract optional "#N _ " prefix
   let sortOrder = 0;
   let rest = stem;
   const prefixMatch = stem.match(/^#(\d+)\s+_\s+([\s\S]+)$/);
@@ -48,7 +55,6 @@ function parseFilename(filename: string): { sortOrder: number; name: string; tag
     rest = prefixMatch[2];
   }
 
-  // Split "Name. tag1, tag2" on the first ". "
   const dotIdx = rest.indexOf('. ');
   if (dotIdx === -1) {
     return { sortOrder, name: rest.trim(), tags: [] };
@@ -64,8 +70,6 @@ function parseFilename(filename: string): { sortOrder: number; name: string; tag
   return { sortOrder, name, tags };
 }
 
-// ── MIME / type helpers ───────────────────────────────────────────────────────
-
 const MIME_MAP: Record<string, string> = {
   '.mp4': 'video/mp4',
   '.mov': 'video/quicktime',
@@ -78,14 +82,29 @@ const MIME_MAP: Record<string, string> = {
 };
 
 const VIDEO_EXTS = new Set(['.mp4', '.mov', '.webm']);
+const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
+
+// ── Sidecar thumbnail lookup ──────────────────────────────────────────────────
+// Looks for a .jpg / .jpeg / .png / .webp with the same stem as the video.
+
+function findSidecarThumbnail(videoPath: string): string | null {
+  const dir = path.dirname(videoPath);
+  const stem = path.basename(videoPath, path.extname(videoPath));
+  for (const ext of ['.jpg', '.jpeg', '.png', '.webp']) {
+    const candidate = path.join(dir, stem + ext);
+    if (fsSync.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
 
 // ── Directory walker ──────────────────────────────────────────────────────────
+// Only collects video files; sidecar images are picked up per-video.
 
 interface VideoFile {
   absolutePath: string;
-  relativePath: string; // relative to ASSETS_DIR, using forward slashes
-  category: string;     // depth-1 folder name
-  subcategory: string;  // immediate parent folder name
+  relativePath: string; // forward-slash, relative to ASSETS_DIR
+  category: string;     // depth-1 folder
+  subcategory: string;  // immediate parent folder
 }
 
 async function walkVideos(rootDir: string): Promise<VideoFile[]> {
@@ -97,22 +116,42 @@ async function walkVideos(rootDir: string): Promise<VideoFile[]> {
       const fullPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         await walk(fullPath);
-      } else if (entry.isFile() && MIME_MAP[path.extname(entry.name).toLowerCase()]) {
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name).toLowerCase();
+        if (!VIDEO_EXTS.has(ext) && !IMAGE_EXTS.has(ext)) continue;
+
         const rel = path.relative(rootDir, fullPath).replace(/\\/g, '/');
         const parts = rel.split('/');
-        if (parts.length < 2) continue; // skip files directly in root
+        if (parts.length < 2) continue;
 
-        const category = parts[0];
-        // immediate parent: last folder before the file
-        const subcategory = parts.length >= 3 ? parts[parts.length - 2] : parts[0];
+        // Skip standalone image files — they are only sidecar thumbnails
+        if (IMAGE_EXTS.has(ext)) continue;
 
-        results.push({ absolutePath: fullPath, relativePath: rel, category, subcategory });
+        results.push({
+          absolutePath: fullPath,
+          relativePath: rel,
+          category: parts[0],
+          subcategory: parts.length >= 3 ? parts[parts.length - 2] : parts[0],
+        });
       }
     }
   }
 
   await walk(rootDir);
   return results;
+}
+
+// ── R2 upload ─────────────────────────────────────────────────────────────────
+
+async function uploadToR2(
+  s3: S3Client,
+  bucket: string,
+  localPath: string,
+  key: string,
+  contentType: string,
+): Promise<void> {
+  const body = await fs.readFile(localPath);
+  await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }));
 }
 
 // ── Upsert helpers ────────────────────────────────────────────────────────────
@@ -144,9 +183,8 @@ async function main() {
 
   console.log('🎬 Walking assets/videos/...\n');
   const files = await walkVideos(ASSETS_DIR);
-  console.log(`Found ${files.length} media file(s)\n`);
+  console.log(`Found ${files.length} video file(s)\n`);
 
-  // Stable sort order per category based on first-seen order
   const catOrder = new Map<string, number>();
   for (const f of files) {
     if (!catOrder.has(f.category)) catOrder.set(f.category, catOrder.size);
@@ -156,8 +194,17 @@ async function main() {
   let skipped = 0;
 
   for (const file of files) {
-    const s3Key = `brolls/${file.relativePath}`;
+    const { sortOrder, name, tags } = parseFilename(file.absolutePath);
+    const ext = path.extname(file.absolutePath).toLowerCase();
+    const contentType = MIME_MAP[ext] || 'application/octet-stream';
 
+    // URL-safe s3Key — no #, spaces, or special chars
+    const catSlug = slugify(file.category);
+    const subSlug = slugify(file.subcategory);
+    const nameSlug = sortOrder > 0 ? `${sortOrder}-${slugify(name)}` : slugify(name);
+    const s3Key = `brolls/${catSlug}/${subSlug}/${nameSlug}${ext}`;
+
+    // Skip if already in DB
     const existing = await prisma.brollItem.findUnique({ where: { s3Key } });
     if (existing) {
       console.log(`  ✓ skip  ${file.relativePath}`);
@@ -165,27 +212,36 @@ async function main() {
       continue;
     }
 
-    const { sortOrder, name, tags } = parseFilename(file.absolutePath);
-    const ext = path.extname(file.absolutePath).toLowerCase();
-    const contentType = MIME_MAP[ext] || 'application/octet-stream';
-    const type = VIDEO_EXTS.has(ext) ? 'video' : 'image';
-
     const category = await upsertCategory(file.category, catOrder.get(file.category) ?? 0);
     const subcategory = await upsertSubcategory(category.id, file.subcategory, 0);
 
+    // Upload video
     console.log(`  ⬆️  ${file.relativePath}`);
-    const body = await fs.readFile(file.absolutePath);
-    await s3.send(
-      new PutObjectCommand({ Bucket: bucket, Key: s3Key, Body: body, ContentType: contentType }),
-    );
+    await uploadToR2(s3, bucket, file.absolutePath, s3Key, contentType);
+    const s3Url = `${publicUrlBase}/${s3Key}`;
+
+    // Sidecar thumbnail (same stem, image extension)
+    let thumbnailUrl: string | null = null;
+    const sidecar = findSidecarThumbnail(file.absolutePath);
+    if (sidecar) {
+      const thumbExt = path.extname(sidecar).toLowerCase();
+      const thumbKey = `brolls/${catSlug}/${subSlug}/${nameSlug}-thumb${thumbExt}`;
+      const thumbMime = MIME_MAP[thumbExt] || 'image/jpeg';
+      await uploadToR2(s3, bucket, sidecar, thumbKey, thumbMime);
+      thumbnailUrl = `${publicUrlBase}/${thumbKey}`;
+      console.log(`  🖼️  thumbnail: ${path.basename(sidecar)}`);
+    } else {
+      console.log(`  ℹ️  no sidecar thumbnail found`);
+    }
 
     await prisma.brollItem.create({
       data: {
         subcategoryId: subcategory.id,
         name,
         s3Key,
-        s3Url: `${publicUrlBase}/${s3Key}`,
-        type,
+        s3Url,
+        thumbnailUrl,
+        type: 'video',
         tags,
         sortOrder,
         isPremium: false,
