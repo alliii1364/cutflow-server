@@ -31,7 +31,8 @@ RUN apk add --no-cache \
     python3 \
     curl \
     ca-certificates \
-    netcat-openbsd
+    netcat-openbsd \
+    openssl
 
 WORKDIR /app
 
