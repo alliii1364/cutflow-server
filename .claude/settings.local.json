@@ -5,7 +5,12 @@
       "Bash(xargs grep *)",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('prisma','none'\\)\\)\\); print\\('ts-node' in str\\(d\\)\\); print\\('tsx' in str\\(d\\)\\)\")",
       "Bash(npx prisma *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' -e ' *)",
+      "Bash(node -e ' *)"
     ]
   }
 }

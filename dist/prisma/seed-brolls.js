@@ -6,7 +6,13 @@ const client_1 = require("@prisma/client");
 const client_s3_1 = require("@aws-sdk/client-s3");
 const fs = require("fs/promises");
 const fsSync = require("fs");
+const os = require("os");
 const path = require("path");
+const ffmpeg = require("fluent-ffmpeg");
+const ffmpegInstaller = require("@ffmpeg-installer/ffmpeg");
+const ffprobeInstaller = require("@ffprobe-installer/ffprobe");
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+ffmpeg.setFfprobePath(ffprobeInstaller.path);
 const prisma = new client_1.PrismaClient();
 function buildR2Client() {
     const accountId = process.env.R2_ACCOUNT_ID;
@@ -73,6 +79,30 @@ function findSidecarThumbnail(videoPath) {
             return candidate;
     }
     return null;
+}
+function getVideoDuration(videoPath) {
+    return new Promise((resolve, reject) => {
+        ffmpeg.ffprobe(videoPath, (err, metadata) => {
+            if (err)
+                reject(err);
+            else
+                resolve(metadata.format.duration || 3);
+        });
+    });
+}
+async function extractFrame(videoPath, outputPath) {
+    const duration = await getVideoDuration(videoPath);
+    const timestamp = Math.max(1, duration * 0.3);
+    return new Promise((resolve, reject) => {
+        ffmpeg(videoPath)
+            .seekInput(timestamp)
+            .frames(1)
+            .videoFilter('scale=640:360:force_original_aspect_ratio=increase,crop=640:360')
+            .output(outputPath)
+            .on('end', () => resolve())
+            .on('error', reject)
+            .run();
+    });
 }
 async function walkVideos(rootDir) {
     const results = [];
@@ -156,17 +186,28 @@ async function main() {
         await uploadToR2(s3, bucket, file.absolutePath, s3Key, contentType);
         const s3Url = toPublicUrl(publicUrlBase, s3Key);
         let thumbnailUrl = null;
+        const thumbKey = s3Key.replace(/\.[^.]+$/, '-thumb.jpg');
         const sidecar = findSidecarThumbnail(file.absolutePath);
         if (sidecar) {
-            const sidecarExt = path.extname(sidecar).toLowerCase();
-            const thumbKey = s3Key.replace(/\.[^.]+$/, `-thumb${sidecarExt}`);
-            const thumbMime = MIME_MAP[sidecarExt] || 'image/jpeg';
-            await uploadToR2(s3, bucket, sidecar, thumbKey, thumbMime);
+            const sidecarMime = MIME_MAP[path.extname(sidecar).toLowerCase()] || 'image/jpeg';
+            await uploadToR2(s3, bucket, sidecar, thumbKey, sidecarMime);
             thumbnailUrl = toPublicUrl(publicUrlBase, thumbKey);
-            console.log(`  🖼️  thumbnail: ${path.basename(sidecar)}`);
+            console.log(`  🖼️  thumbnail: sidecar`);
         }
         else {
-            console.log(`  ℹ️  no sidecar thumbnail`);
+            const tmpThumb = path.join(os.tmpdir(), `cutflow-thumb-${Date.now()}.jpg`);
+            try {
+                await extractFrame(file.absolutePath, tmpThumb);
+                await uploadToR2(s3, bucket, tmpThumb, thumbKey, 'image/jpeg');
+                thumbnailUrl = toPublicUrl(publicUrlBase, thumbKey);
+                console.log(`  🖼️  thumbnail: ffmpeg frame`);
+            }
+            catch (err) {
+                console.warn(`  ⚠️  thumbnail failed: ${err.message}`);
+            }
+            finally {
+                await fs.unlink(tmpThumb).catch(() => { });
+            }
         }
         await prisma.brollItem.create({
             data: {

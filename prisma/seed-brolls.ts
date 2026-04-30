@@ -5,7 +5,14 @@ import { PrismaClient } from '@prisma/client';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
+import * as os from 'os';
 import * as path from 'path';
+import * as ffmpeg from 'fluent-ffmpeg';
+import * as ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import * as ffprobeInstaller from '@ffprobe-installer/ffprobe';
+
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
 const prisma = new PrismaClient();
 
@@ -85,8 +92,9 @@ const MIME_MAP: Record<string, string> = {
 const VIDEO_EXTS = new Set(['.mp4', '.mov', '.webm']);
 const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
 
-// ── Sidecar thumbnail ─────────────────────────────────────────────────────────
-// Place a .jpg / .png with the same stem next to the video for a thumbnail.
+// ── Thumbnail ─────────────────────────────────────────────────────────────────
+// Prefer a sidecar image (same stem, image extension) placed next to the video.
+// Falls back to extracting a frame at 1 second using ffmpeg.
 
 function findSidecarThumbnail(videoPath: string): string | null {
   const dir = path.dirname(videoPath);
@@ -96,6 +104,33 @@ function findSidecarThumbnail(videoPath: string): string | null {
     if (fsSync.existsSync(candidate)) return candidate;
   }
   return null;
+}
+
+function getVideoDuration(videoPath: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(videoPath, (err, metadata) => {
+      if (err) reject(err);
+      else resolve(metadata.format.duration || 3);
+    });
+  });
+}
+
+async function extractFrame(videoPath: string, outputPath: string): Promise<void> {
+  const duration = await getVideoDuration(videoPath);
+  const timestamp = Math.max(1, duration * 0.3);
+
+  return new Promise((resolve, reject) => {
+    ffmpeg(videoPath)
+      .seekInput(timestamp)
+      .frames(1)
+      // Scale so the frame fills 640x360 (cover), then crop to exact 16:9.
+      // Mirrors CSS object-cover: no distortion, no letterboxing.
+      .videoFilter('scale=640:360:force_original_aspect_ratio=increase,crop=640:360')
+      .output(outputPath)
+      .on('end', () => resolve())
+      .on('error', reject)
+      .run();
+  });
 }
 
 // ── Directory walker ──────────────────────────────────────────────────────────
@@ -218,18 +253,27 @@ async function main() {
     // s3Url is URL-encoded so # → %23, spaces → %20 — safe for browsers
     const s3Url = toPublicUrl(publicUrlBase, s3Key);
 
-    // Sidecar thumbnail
+    // Thumbnail: sidecar image preferred, ffmpeg frame extraction as fallback
     let thumbnailUrl: string | null = null;
+    const thumbKey = s3Key.replace(/\.[^.]+$/, '-thumb.jpg');
     const sidecar = findSidecarThumbnail(file.absolutePath);
     if (sidecar) {
-      const sidecarExt = path.extname(sidecar).toLowerCase();
-      const thumbKey = s3Key.replace(/\.[^.]+$/, `-thumb${sidecarExt}`);
-      const thumbMime = MIME_MAP[sidecarExt] || 'image/jpeg';
-      await uploadToR2(s3, bucket, sidecar, thumbKey, thumbMime);
+      const sidecarMime = MIME_MAP[path.extname(sidecar).toLowerCase()] || 'image/jpeg';
+      await uploadToR2(s3, bucket, sidecar, thumbKey, sidecarMime);
       thumbnailUrl = toPublicUrl(publicUrlBase, thumbKey);
-      console.log(`  🖼️  thumbnail: ${path.basename(sidecar)}`);
+      console.log(`  🖼️  thumbnail: sidecar`);
     } else {
-      console.log(`  ℹ️  no sidecar thumbnail`);
+      const tmpThumb = path.join(os.tmpdir(), `cutflow-thumb-${Date.now()}.jpg`);
+      try {
+        await extractFrame(file.absolutePath, tmpThumb);
+        await uploadToR2(s3, bucket, tmpThumb, thumbKey, 'image/jpeg');
+        thumbnailUrl = toPublicUrl(publicUrlBase, thumbKey);
+        console.log(`  🖼️  thumbnail: ffmpeg frame`);
+      } catch (err) {
+        console.warn(`  ⚠️  thumbnail failed: ${(err as Error).message}`);
+      } finally {
+        await fs.unlink(tmpThumb).catch(() => {});
+      }
     }
 
     await prisma.brollItem.create({
