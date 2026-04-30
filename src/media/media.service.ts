@@ -192,7 +192,16 @@ export class MediaService {
   }
 
   // B-roll Library Methods
-  async getBrollLibrary() {
+  async getBrollLibrary(q?: string) {
+    const itemWhere: any = { isActive: true };
+    if (q) {
+      const term = q.trim();
+      itemWhere.OR = [
+        { name: { contains: term, mode: 'insensitive' } },
+        { tags: { has: term } },
+      ];
+    }
+
     const categories = await this.prisma.brollCategory.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
@@ -202,7 +211,7 @@ export class MediaService {
           orderBy: { sortOrder: 'asc' },
           include: {
             items: {
-              where: { isActive: true },
+              where: itemWhere,
               orderBy: { sortOrder: 'asc' },
             },
           },
@@ -210,10 +219,18 @@ export class MediaService {
       },
     });
 
-    // Transform to match frontend expected format
+    const filtered = q
+      ? categories
+          .map((cat) => ({
+            ...cat,
+            subcategories: cat.subcategories.filter((sub) => sub.items.length > 0),
+          }))
+          .filter((cat) => cat.subcategories.length > 0)
+      : categories;
+
     return {
       success: true,
-      data: categories.map((cat) => ({
+      data: filtered.map((cat) => ({
         id: cat.id,
         name: cat.name,
         subcategories: cat.subcategories.map((sub) => ({
@@ -223,6 +240,7 @@ export class MediaService {
             id: item.id,
             name: item.name,
             description: item.description,
+            tags: item.tags,
             url: item.s3Url,
             thumbnail_url: item.thumbnailUrl,
             type: item.type as 'image' | 'video',
@@ -257,6 +275,7 @@ export class MediaService {
       type?: string;
       isPremium?: boolean;
       duration?: number;
+      tags?: string[];
     },
     sortOrder: number = 0,
   ) {
@@ -271,6 +290,7 @@ export class MediaService {
         type: data.type || 'video',
         isPremium: data.isPremium || false,
         duration: data.duration,
+        tags: data.tags || [],
         sortOrder,
       },
     });

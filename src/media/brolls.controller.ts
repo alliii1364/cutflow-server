@@ -1,5 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { MediaService } from './media.service';
 import { Public } from '../common/decorators/public.decorator';
 
@@ -11,7 +11,8 @@ export class BrollsController {
   @Public()
   @Get('library')
   @ApiOperation({ summary: 'Get B-roll library with categories and items' })
-  getBrollLibrary() {
-    return this.mediaService.getBrollLibrary();
+  @ApiQuery({ name: 'q', required: false, description: 'Search by name or tags' })
+  getBrollLibrary(@Query('q') q?: string) {
+    return this.mediaService.getBrollLibrary(q);
   }
 }

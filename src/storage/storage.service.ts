@@ -21,16 +21,36 @@ const pipeline = promisify(stream.pipeline);
 export class StorageService {
   private s3Client: S3Client;
   private bucketName: string;
+  private publicUrlBase: string;
+  private isR2: boolean;
 
   constructor(private configService: ConfigService) {
-    this.s3Client = new S3Client({
-      region: this.configService.get('AWS_REGION') || 'us-east-1',
-      credentials: {
-        accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID') || '',
-        secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY') || '',
-      },
-    });
-    this.bucketName = this.configService.get('AWS_S3_BUCKET_NAME') || 'cutflow-media';
+    const r2AccountId = this.configService.get<string>('R2_ACCOUNT_ID');
+    this.isR2 = !!r2AccountId;
+
+    if (this.isR2) {
+      this.bucketName = this.configService.get('R2_BUCKET_NAME') || 'cutflow-media';
+      this.publicUrlBase = this.configService.get('R2_PUBLIC_URL') || '';
+      this.s3Client = new S3Client({
+        region: 'auto',
+        endpoint: `https://${r2AccountId}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: this.configService.get('R2_ACCESS_KEY_ID') || '',
+          secretAccessKey: this.configService.get('R2_SECRET_ACCESS_KEY') || '',
+        },
+      });
+    } else {
+      const region = this.configService.get('AWS_REGION') || 'us-east-1';
+      this.bucketName = this.configService.get('AWS_S3_BUCKET_NAME') || 'cutflow-media';
+      this.publicUrlBase = `https://${this.bucketName}.s3.${region}.amazonaws.com`;
+      this.s3Client = new S3Client({
+        region,
+        credentials: {
+          accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID') || '',
+          secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY') || '',
+        },
+      });
+    }
   }
 
   async generatePresignedUploadUrl(
@@ -51,7 +71,7 @@ export class StorageService {
       expiresIn,
     });
 
-    const publicUrl = `https://${this.bucketName}.s3.${this.configService.get('AWS_REGION')}.amazonaws.com/${key}`;
+    const publicUrl = `${this.publicUrlBase}/${key}`;
 
     return { uploadUrl, key, publicUrl };
   }
@@ -84,7 +104,7 @@ export class StorageService {
   }
 
   getPublicUrl(key: string): string {
-    return `https://${this.bucketName}.s3.${this.configService.get('AWS_REGION')}.amazonaws.com/${key}`;
+    return `${this.publicUrlBase}/${key}`;
   }
 
   async downloadFile(key: string, localPath: string): Promise<void> {

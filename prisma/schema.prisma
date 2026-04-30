@@ -476,6 +476,7 @@ model BrollItem {
   type                  String          @default("video")  // video, image
   isPremium             Boolean         @default(false)
   duration              Int?            // in seconds for videos
+  tags                  String[]        @default([])
   sortOrder             Int             @default(0)
   isActive              Boolean         @default(true)
   createdAt             DateTime        @default(now())
