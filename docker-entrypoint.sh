@@ -23,10 +23,10 @@ if [ -z "$RENDER" ]; then
 fi
 
 echo "🔄 Running database migrations..."
-npx prisma migrate deploy
+npx prisma@5.22.0 migrate deploy
 
 echo "🔧 Ensuring Prisma client is generated..."
-npx prisma generate
+npx prisma@5.22.0 generate
 
 echo "✅ Setup complete! Starting application..."
 exec "$@"
