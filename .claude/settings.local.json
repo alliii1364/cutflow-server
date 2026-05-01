@@ -10,7 +10,9 @@
       "Bash(npm run *)",
       "Bash(echo \"EXIT:$?\")",
       "Bash(npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' -e ' *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Github\\\\cutflow-server\" -Directory)",
+      "Bash(Select-Object Name)"
     ]
   }
 }
