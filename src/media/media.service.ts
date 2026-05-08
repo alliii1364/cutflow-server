@@ -2,6 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { CacheService } from '../cache/cache.service';
+
+const BROLL_LIBRARY_CACHE_KEY = 'broll:library';
+const BROLL_LIBRARY_TTL = 1800; // 30 minutes
+const BROLL_SEARCH_TTL = 300;   // 5 minutes
 
 @Injectable()
 export class MediaService {
@@ -9,6 +14,7 @@ export class MediaService {
     private prisma: PrismaService,
     private storage: StorageService,
     private subscriptionsService: SubscriptionsService,
+    private cache: CacheService,
   ) {}
 
   async getPresignedUploadUrl(
@@ -193,33 +199,57 @@ export class MediaService {
 
   // B-roll Library Methods
   async getBrollLibrary(q?: string) {
-    const itemWhere: any = { isActive: true };
-    if (q) {
-      const term = q.trim();
-      itemWhere.OR = [
-        { name: { contains: term, mode: 'insensitive' } },
-        { tags: { has: term } },
-      ];
-    }
+    const term = q?.trim() ?? '';
+    const cacheKey = term ? `broll:search:${term.toLowerCase()}` : BROLL_LIBRARY_CACHE_KEY;
+    const ttl = term ? BROLL_SEARCH_TTL : BROLL_LIBRARY_TTL;
+
+    const cached = await this.cache.get<{ success: boolean; data: unknown[] }>(cacheKey);
+    if (cached) return cached;
+
+    const itemSelect = {
+      id: true,
+      name: true,
+      description: true,
+      tags: true,
+      s3Url: true,
+      thumbnailUrl: true,
+      type: true,
+      isPremium: true,
+    } as const;
+
+    const itemWhere = term
+      ? {
+          isActive: true,
+          OR: [
+            { name: { contains: term, mode: 'insensitive' as const } },
+            { tags: { has: term } },
+          ],
+        }
+      : { isActive: true };
 
     const categories = await this.prisma.brollCategory.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
-      include: {
+      select: {
+        id: true,
+        name: true,
         subcategories: {
           where: { isActive: true },
           orderBy: { sortOrder: 'asc' },
-          include: {
+          select: {
+            id: true,
+            name: true,
             items: {
               where: itemWhere,
               orderBy: { sortOrder: 'asc' },
+              select: itemSelect,
             },
           },
         },
       },
     });
 
-    const filtered = q
+    const filtered = term
       ? categories
           .map((cat) => ({
             ...cat,
@@ -228,7 +258,7 @@ export class MediaService {
           .filter((cat) => cat.subcategories.length > 0)
       : categories;
 
-    return {
+    const result = {
       success: true,
       data: filtered.map((cat) => ({
         id: cat.id,
@@ -249,6 +279,9 @@ export class MediaService {
         })),
       })),
     };
+
+    void this.cache.set(cacheKey, result, ttl);
+    return result;
   }
 
   // Admin methods for managing B-roll library

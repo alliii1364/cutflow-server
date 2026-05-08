@@ -2,14 +2,13 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-// import { addDays, addHours } from 'date-fns';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +16,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private notifications: NotificationsService,
   ) {}
 
   async register(email: string, password: string, firstName?: string, lastName?: string) {
@@ -68,13 +68,73 @@ export class AuthService {
       },
     });
 
+    await this.issueEmailVerificationOtp(user.id, email);
+
+    return { requiresVerification: true, email };
+  }
+
+  private async issueEmailVerificationOtp(userId: string, email: string) {
+    // Invalidate any previous tokens for this user
+    await this.prisma.emailVerificationToken.updateMany({
+      where: { userId, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await this.prisma.emailVerificationToken.create({
+      data: {
+        userId,
+        token: otp,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      },
+    });
+
+    await this.notifications.sendOtpEmail(email, otp, 'signup');
+  }
+
+  async verifyEmailOtp(email: string, otp: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { subscription: { include: { plan: true } } },
+    });
+
+    if (!user) throw new UnauthorizedException('Invalid code');
+
+    const record = await this.prisma.emailVerificationToken.findFirst({
+      where: { userId: user.id, token: otp, usedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!record || record.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired code');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: true, lastLoginAt: new Date() },
+      }),
+      this.prisma.emailVerificationToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 
-    return {
-      user: this.sanitizeUser(user),
-      tokens,
-    };
+    return { user: this.sanitizeUser(user), tokens };
+  }
+
+  async resendEmailVerification(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user || user.emailVerified) {
+      return { message: 'If an account awaiting verification exists, a new code has been sent' };
+    }
+
+    await this.issueEmailVerificationOtp(user.id, email);
+    return { message: 'If an account awaiting verification exists, a new code has been sent' };
   }
 
   async login(email: string, password: string) {
@@ -172,8 +232,7 @@ export class AuthService {
       },
     });
 
-    // TODO: Send otp via email
-    // await this.notificationsService.sendPasswordResetEmail(email, otp);
+    await this.notifications.sendOtpEmail(email, otp, 'password-reset');
 
     return { message: 'If an account exists, a reset code has been sent' };
   }

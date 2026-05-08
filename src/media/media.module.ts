@@ -5,9 +5,10 @@ import { BrollsController } from './brolls.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { StorageModule } from '../storage/storage.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { CacheModule } from '../cache/cache.module';
 
 @Module({
-  imports: [PrismaModule, StorageModule, SubscriptionsModule],
+  imports: [PrismaModule, StorageModule, SubscriptionsModule, CacheModule],
   providers: [MediaService],
   controllers: [MediaController, BrollsController],
   exports: [MediaService],
