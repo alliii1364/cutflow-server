@@ -18,12 +18,12 @@ export class NotificationsService {
     if (gmailUser && gmailPass) {
       this.transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
+        port: 465,
+        secure: true,
         family: 4,
         auth: { user: gmailUser, pass: gmailPass },
       } as any);
-      this.logger.log(`Email transporter ready (${gmailUser})`);
+      this.logger.log(`Email ready (${gmailUser})`);
     }
   }
 
@@ -120,29 +120,17 @@ export class NotificationsService {
     }
   }
 
-  private fromAddress(): string {
-    const user = this.configService.get('GMAIL_USER') || 'noreply@cutflow.app';
-    return `CutFlow <${user}>`;
-  }
-
   private async sendEmail(userId: string, subject: string, message: string, actionUrl?: string) {
     if (!this.transporter) return;
-
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user?.email) return;
-
     try {
       await this.transporter.sendMail({
+        from: `CutFlow <${this.configService.get('GMAIL_USER')}>`,
         to: user.email,
-        from: this.fromAddress(),
         subject,
         text: message,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-            <h2>${subject}</h2>
-            <p>${message}</p>
-            ${actionUrl ? `<a href="${actionUrl}" style="display:inline-block;padding:12px 24px;background:#0070f3;color:#fff;text-decoration:none;border-radius:4px">View Details</a>` : ''}
-          </div>`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto"><h2>${subject}</h2><p>${message}</p>${actionUrl ? `<a href="${actionUrl}" style="display:inline-block;padding:12px 24px;background:#0070f3;color:#fff;text-decoration:none;border-radius:4px">View Details</a>` : ''}</div>`,
       });
     } catch (error) {
       this.logger.error('Failed to send email:', error);
@@ -151,22 +139,21 @@ export class NotificationsService {
 
   async sendOtpEmail(toEmail: string, otp: string, purpose: 'signup' | 'password-reset') {
     if (!this.transporter) {
-      this.logger.warn('Email not configured — skipping OTP email');
+      this.logger.warn('Email not configured — skipping OTP');
       return;
     }
-
+    const from = `CutFlow <${this.configService.get('GMAIL_USER')}>`;
     const subject = purpose === 'signup' ? 'Verify your CutFlow account' : 'Your CutFlow password reset code';
     const heading = purpose === 'signup' ? 'Verify your email' : 'Reset your password';
     const body = purpose === 'signup'
       ? 'Use the code below to verify your email address and activate your CutFlow account.'
       : 'Use the code below to reset your CutFlow password. This code expires in 15 minutes.';
-
     try {
       const info = await this.transporter.sendMail({
+        from,
         to: toEmail,
-        from: this.fromAddress(),
         subject,
-        text: `${heading}\n\n${body}\n\nYour code: ${otp}\n\nThis code expires in 15 minutes.`,
+        text: `${heading}\n\nYour code: ${otp}\n\nExpires in 15 minutes.`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff;border-radius:8px;border:1px solid #e5e7eb">
             <h2 style="margin:0 0 8px;font-size:20px;color:#111">${heading}</h2>
@@ -174,12 +161,12 @@ export class NotificationsService {
             <div style="text-align:center;margin:24px 0">
               <span style="display:inline-block;font-size:32px;font-weight:700;letter-spacing:10px;color:#111;background:#f3f4f6;padding:16px 24px;border-radius:8px">${otp}</span>
             </div>
-            <p style="margin:24px 0 0;color:#9ca3af;font-size:12px">This code expires in 15 minutes. If you did not request this, you can safely ignore this email.</p>
+            <p style="margin:24px 0 0;color:#9ca3af;font-size:12px">Expires in 15 minutes. If you didn't request this, ignore this email.</p>
           </div>`,
       });
-      this.logger.log(`OTP email sent to ${toEmail} — messageId: ${info.messageId}`);
+      this.logger.log(`OTP sent to ${toEmail} — ${info.messageId}`);
     } catch (error) {
-      this.logger.error(`Failed to send OTP email to ${toEmail}:`, error);
+      this.logger.error(`Failed to send OTP to ${toEmail}:`, error);
     }
   }
 
