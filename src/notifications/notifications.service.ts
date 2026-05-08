@@ -1,26 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import * as nodemailer from 'nodemailer';
-import type { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class NotificationsService {
-  private transporter: Transporter | null = null;
+  private resend: Resend | null = null;
 
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {
-    const smtpUser = this.configService.get('BREVO_SMTP_USER');
-    const smtpKey = this.configService.get('BREVO_SMTP_KEY');
-    if (smtpUser && smtpKey) {
-      this.transporter = nodemailer.createTransport({
-        host: 'smtp-relay.brevo.com',
-        port: 587,
-        secure: false,
-        auth: { user: smtpUser, pass: smtpKey },
-      });
+    const apiKey = this.configService.get('RESEND_API_KEY');
+    if (apiKey) {
+      this.resend = new Resend(apiKey);
     }
   }
 
@@ -118,18 +111,17 @@ export class NotificationsService {
   }
 
   private fromAddress(): string {
-    const user = this.configService.get('BREVO_SMTP_USER') || 'noreply@cutflow.app';
-    return `CutFlow <${user}>`;
+    return this.configService.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
   }
 
   private async sendEmail(userId: string, subject: string, message: string, actionUrl?: string) {
-    if (!this.transporter) return;
+    if (!this.resend) return;
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user?.email) return;
 
     try {
-      await this.transporter.sendMail({
+      await this.resend.emails.send({
         to: user.email,
         from: this.fromAddress(),
         subject,
@@ -147,8 +139,8 @@ export class NotificationsService {
   }
 
   async sendOtpEmail(toEmail: string, otp: string, purpose: 'signup' | 'password-reset') {
-    if (!this.transporter) {
-      console.warn('Gmail SMTP not configured — skipping OTP email');
+    if (!this.resend) {
+      console.warn('Resend not configured — skipping OTP email');
       return;
     }
 
@@ -159,7 +151,7 @@ export class NotificationsService {
       : 'Use the code below to reset your CutFlow password. This code expires in 15 minutes.';
 
     try {
-      await this.transporter.sendMail({
+      const result = await this.resend.emails.send({
         to: toEmail,
         from: this.fromAddress(),
         subject,
@@ -174,6 +166,7 @@ export class NotificationsService {
             <p style="margin:24px 0 0;color:#9ca3af;font-size:12px">This code expires in 15 minutes. If you did not request this, you can safely ignore this email.</p>
           </div>`,
       });
+      console.log('OTP email sent:', result);
     } catch (error) {
       console.error('Failed to send OTP email:', error);
     }
