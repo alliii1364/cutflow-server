@@ -12,12 +12,14 @@ export class NotificationsService {
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {
-    const gmailUser = this.configService.get('GMAIL_USER');
-    const gmailPass = this.configService.get('GMAIL_APP_PASSWORD');
-    if (gmailUser && gmailPass) {
+    const smtpUser = this.configService.get('BREVO_SMTP_USER');
+    const smtpKey = this.configService.get('BREVO_SMTP_KEY');
+    if (smtpUser && smtpKey) {
       this.transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user: gmailUser, pass: gmailPass },
+        host: 'smtp-relay.brevo.com',
+        port: 587,
+        secure: false,
+        auth: { user: smtpUser, pass: smtpKey },
       });
     }
   }
@@ -116,7 +118,7 @@ export class NotificationsService {
   }
 
   private fromAddress(): string {
-    const user = this.configService.get('GMAIL_USER') || 'noreply@cutflow.app';
+    const user = this.configService.get('BREVO_SMTP_USER') || 'noreply@cutflow.app';
     return `CutFlow <${user}>`;
   }
 
