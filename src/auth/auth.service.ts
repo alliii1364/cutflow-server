@@ -89,7 +89,8 @@ export class AuthService {
       },
     });
 
-    await this.notifications.sendOtpEmail(email, otp, 'signup');
+    // fire-and-forget — don't block the response on SMTP
+    void this.notifications.sendOtpEmail(email, otp, 'signup');
   }
 
   async verifyEmailOtp(email: string, otp: string) {
@@ -232,7 +233,8 @@ export class AuthService {
       },
     });
 
-    await this.notifications.sendOtpEmail(email, otp, 'password-reset');
+    // fire-and-forget — don't block the response on SMTP
+    void this.notifications.sendOtpEmail(email, otp, 'password-reset');
 
     return { message: 'If an account exists, a reset code has been sent' };
   }
