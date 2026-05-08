@@ -22,7 +22,7 @@ export class NotificationsService {
         secure: false,
         family: 4,
         auth: { user: gmailUser, pass: gmailPass },
-      });
+      } as any);
       this.logger.log(`Email transporter ready (${gmailUser})`);
     }
   }
