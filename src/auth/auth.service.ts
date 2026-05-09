@@ -54,6 +54,7 @@ export class AuthService {
         passwordHash,
         firstName,
         lastName,
+        emailVerified: true, // temporarily skip OTP verification
         subscription: {
           create: {
             planId: freePlan.id,
@@ -68,9 +69,7 @@ export class AuthService {
       },
     });
 
-    await this.issueEmailVerificationOtp(user.id, email);
-
-    return { requiresVerification: true, email };
+    return { requiresVerification: false, email };
   }
 
   private async issueEmailVerificationOtp(userId: string, email: string) {

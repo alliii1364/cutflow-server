@@ -1,29 +1,25 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import * as nodemailer from 'nodemailer';
-import type { Transporter } from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
-  private transporter: Transporter | null = null;
+  private sgReady = false;
+  private fromEmail = '';
 
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {
-    const gmailUser = this.configService.get('GMAIL_USER');
-    const gmailPass = this.configService.get('GMAIL_APP_PASSWORD');
-    if (gmailUser && gmailPass) {
-      this.transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
-        family: 4,
-        auth: { user: gmailUser, pass: gmailPass },
-      } as any);
-      this.logger.log(`Email ready (${gmailUser})`);
+    const apiKey = this.configService.get('SENDGRID_API_KEY');
+    const from = this.configService.get('SENDGRID_FROM_EMAIL');
+    if (apiKey && from) {
+      sgMail.setApiKey(apiKey);
+      this.fromEmail = from;
+      this.sgReady = true;
+      this.logger.log(`Email ready via SendGrid (${from})`);
     }
   }
 
@@ -121,12 +117,12 @@ export class NotificationsService {
   }
 
   private async sendEmail(userId: string, subject: string, message: string, actionUrl?: string) {
-    if (!this.transporter) return;
+    if (!this.sgReady) return;
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user?.email) return;
     try {
-      await this.transporter.sendMail({
-        from: `CutFlow <${this.configService.get('GMAIL_USER')}>`,
+      await sgMail.send({
+        from: { email: this.fromEmail, name: 'CutFlow' },
         to: user.email,
         subject,
         text: message,
@@ -138,19 +134,18 @@ export class NotificationsService {
   }
 
   async sendOtpEmail(toEmail: string, otp: string, purpose: 'signup' | 'password-reset') {
-    if (!this.transporter) {
-      this.logger.warn('Email not configured — skipping OTP');
+    if (!this.sgReady) {
+      this.logger.warn('SendGrid not configured — skipping OTP');
       return;
     }
-    const from = `CutFlow <${this.configService.get('GMAIL_USER')}>`;
     const subject = purpose === 'signup' ? 'Verify your CutFlow account' : 'Your CutFlow password reset code';
     const heading = purpose === 'signup' ? 'Verify your email' : 'Reset your password';
     const body = purpose === 'signup'
       ? 'Use the code below to verify your email address and activate your CutFlow account.'
       : 'Use the code below to reset your CutFlow password. This code expires in 15 minutes.';
     try {
-      const info = await this.transporter.sendMail({
-        from,
+      await sgMail.send({
+        from: { email: this.fromEmail, name: 'CutFlow' },
         to: toEmail,
         subject,
         text: `${heading}\n\nYour code: ${otp}\n\nExpires in 15 minutes.`,
@@ -164,7 +159,7 @@ export class NotificationsService {
             <p style="margin:24px 0 0;color:#9ca3af;font-size:12px">Expires in 15 minutes. If you didn't request this, ignore this email.</p>
           </div>`,
       });
-      this.logger.log(`OTP sent to ${toEmail} — ${info.messageId}`);
+      this.logger.log(`OTP sent to ${toEmail}`);
     } catch (error) {
       this.logger.error(`Failed to send OTP to ${toEmail}:`, error);
     }
