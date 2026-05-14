@@ -4,9 +4,16 @@ import { StorageService } from '../storage/storage.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { CacheService } from '../cache/cache.service';
 
-const BROLL_LIBRARY_CACHE_KEY = 'broll:library';
+// Bump the version suffix whenever the library shape or filter changes so stale
+// Redis entries from previous deploys don't keep leaking through.
+const BROLL_LIBRARY_CACHE_KEY = 'broll:library:v2';
 const BROLL_LIBRARY_TTL = 1800; // 30 minutes
 const BROLL_SEARCH_TTL = 300;   // 5 minutes
+
+// Temporary launch allowlist — only these categories are exposed to clients.
+// Remove this restriction (and drop the `name: { in: ... }` filter below) to
+// re-enable the full library.
+const ENABLED_BROLL_CATEGORIES = ['Beauty', 'Health and Wellness'];
 
 @Injectable()
 export class MediaService {
@@ -228,7 +235,7 @@ export class MediaService {
       : { isActive: true };
 
     const categories = await this.prisma.brollCategory.findMany({
-      where: { isActive: true },
+      where: { isActive: true, name: { in: ENABLED_BROLL_CATEGORIES } },
       orderBy: { sortOrder: 'asc' },
       select: {
         id: true,
