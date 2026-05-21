@@ -51,8 +51,37 @@ function toPublicUrl(base: string, s3Key: string): string {
 // ── Filename parser ───────────────────────────────────────────────────────────
 // Format: "#27 _ My Clip Name. tag1, tag2, tag3.mov"
 //      →  sortOrder=27, name="My Clip Name", tags=["tag1","tag2","tag3"]
+//
+// Filter tokens within the tag list are extracted into structured fields and
+// stripped from `tags`. Recognized tokens (case-insensitive):
+//   gender:       "male" | "female"
+//   ethnicity:    "black" | "white"
+//   age:          "age:30" or "age=30"   (integer 0..120)
+//   nationality:  any of the 20 codes in NATIONALITY_CODES below
+// e.g. "#3 _ Smiling. portrait, male, white, american, age:28.mp4"
 
-function parseFilename(filename: string): { sortOrder: number; name: string; tags: string[] } {
+const GENDER_TOKENS = new Set(['male', 'female']);
+const ETHNICITY_TOKENS = new Set([
+  'white', 'black', 'asian', 'spanish', 'swedish', 'italian',
+  'brazilian', 'ukrainian', 'european', 'british',
+]);
+const NATIONALITY_CODES = new Set([
+  'american', 'british', 'canadian', 'australian', 'indian', 'pakistani',
+  'chinese', 'japanese', 'korean', 'french', 'german', 'spanish', 'italian',
+  'brazilian', 'mexican', 'nigerian', 'egyptian', 'emirati', 'turkish', 'saudi',
+]);
+
+interface ParsedFilename {
+  sortOrder: number;
+  name: string;
+  tags: string[];
+  gender?: 'male' | 'female';
+  ethnicity?: string;
+  age?: number;
+  nationality?: string;
+}
+
+function parseFilename(filename: string): ParsedFilename {
   const stem = path.basename(filename, path.extname(filename));
 
   let sortOrder = 0;
@@ -69,13 +98,35 @@ function parseFilename(filename: string): { sortOrder: number; name: string; tag
   }
 
   const name = rest.slice(0, dotIdx).trim();
-  const tags = rest
+  const rawTags = rest
     .slice(dotIdx + 2)
     .split(',')
     .map((t) => t.trim())
     .filter(Boolean);
 
-  return { sortOrder, name, tags };
+  const tags: string[] = [];
+  let gender: 'male' | 'female' | undefined;
+  let ethnicity: string | undefined;
+  let age: number | undefined;
+  let nationality: string | undefined;
+
+  for (const raw of rawTags) {
+    const lower = raw.toLowerCase();
+
+    const ageMatch = lower.match(/^age\s*[:=]\s*(\d{1,3})$/);
+    if (ageMatch) {
+      const n = parseInt(ageMatch[1], 10);
+      if (n >= 0 && n <= 120) age = n;
+      continue;
+    }
+    if (GENDER_TOKENS.has(lower)) { gender = lower as 'male' | 'female'; continue; }
+    if (ETHNICITY_TOKENS.has(lower)) { ethnicity = lower; continue; }
+    if (NATIONALITY_CODES.has(lower)) { nationality = lower; continue; }
+
+    tags.push(raw);
+  }
+
+  return { sortOrder, name, tags, gender, ethnicity, age, nationality };
 }
 
 const MIME_MAP: Record<string, string> = {
@@ -206,14 +257,13 @@ async function upsertSubcategory(categoryId: string, name: string, sortOrder: nu
 
 async function main() {
   const ASSETS_DIR = path.join(__dirname, '..', 'assets', 'videos');
+  const REFRESH_METADATA = process.env.REFRESH_METADATA === '1';
 
   if (!fsSync.existsSync(ASSETS_DIR)) {
     console.error(`❌ Not found: ${ASSETS_DIR}`);
     console.error('   Create assets/videos/<Category>/<Subcategory>/<files> and re-run.');
     process.exit(1);
   }
-
-  const { client: s3, bucket, publicUrlBase } = buildR2Client();
 
   console.log('🎬 Walking assets/videos/...\n');
   const files = await walkVideos(ASSETS_DIR);
@@ -223,6 +273,56 @@ async function main() {
   for (const f of files) {
     if (!catOrder.has(f.category)) catOrder.set(f.category, catOrder.size);
   }
+
+  if (REFRESH_METADATA) {
+    console.log('🔁 REFRESH_METADATA=1 — updating existing items in place (no upload).\n');
+    let updated = 0;
+    let notFound = 0;
+
+    for (const file of files) {
+      const parsed = parseFilename(file.absolutePath);
+      const category = await prisma.brollCategory.findFirst({ where: { name: file.category } });
+      if (!category) { console.log(`  ?  no category for ${file.relativePath}`); notFound++; continue; }
+      const subcategory = await prisma.brollSubcategory.findFirst({
+        where: { categoryId: category.id, name: file.subcategory },
+      });
+      if (!subcategory) { console.log(`  ?  no subcategory for ${file.relativePath}`); notFound++; continue; }
+
+      // Match by s3Key first (filename unchanged), fall back to (subcategoryId, name)
+      // so renamed files still hit their existing row.
+      const s3Key = `brolls/${file.relativePath}`;
+      const existing =
+        (await prisma.brollItem.findUnique({ where: { s3Key } })) ??
+        (await prisma.brollItem.findFirst({
+          where: { subcategoryId: subcategory.id, name: parsed.name },
+        }));
+
+      if (!existing) {
+        console.log(`  ?  no match for "${parsed.name}" in ${file.subcategory}`);
+        notFound++;
+        continue;
+      }
+
+      await prisma.brollItem.update({
+        where: { id: existing.id },
+        data: {
+          tags: parsed.tags,
+          sortOrder: parsed.sortOrder,
+          gender: parsed.gender ?? null,
+          ethnicity: parsed.ethnicity ?? null,
+          age: parsed.age ?? null,
+          nationality: parsed.nationality ?? null,
+        },
+      });
+      console.log(`  ✏️  ${parsed.name} [g=${parsed.gender ?? '-'} e=${parsed.ethnicity ?? '-'} a=${parsed.age ?? '-'} n=${parsed.nationality ?? '-'}]`);
+      updated++;
+    }
+
+    console.log(`\n✅ Refresh done — ${updated} updated, ${notFound} not matched.`);
+    return;
+  }
+
+  const { client: s3, bucket, publicUrlBase } = buildR2Client();
 
   let created = 0;
   let skipped = 0;
@@ -239,7 +339,7 @@ async function main() {
       continue;
     }
 
-    const { sortOrder, name, tags } = parseFilename(file.absolutePath);
+    const { sortOrder, name, tags, gender, ethnicity, age, nationality } = parseFilename(file.absolutePath);
     const ext = path.extname(file.absolutePath).toLowerCase();
     const contentType = MIME_MAP[ext] || 'application/octet-stream';
 
@@ -287,10 +387,14 @@ async function main() {
         tags,
         sortOrder,
         isPremium: false,
+        gender: gender ?? null,
+        ethnicity: ethnicity ?? null,
+        age: age ?? null,
+        nationality: nationality ?? null,
       },
     });
 
-    console.log(`  ✅ "${name}" [${tags.join(', ')}]`);
+    console.log(`  ✅ "${name}" [${tags.join(', ')}] g=${gender ?? '-'} e=${ethnicity ?? '-'} a=${age ?? '-'} n=${nationality ?? '-'}`);
     created++;
   }
 

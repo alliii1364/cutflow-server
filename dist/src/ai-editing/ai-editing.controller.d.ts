@@ -35,8 +35,8 @@ export declare class AiEditingController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.JobStatus;
         progress: number;
+        status: import(".prisma/client").$Enums.JobStatus;
         projectId: string;
         errorMessage: string | null;
         jobType: string;
@@ -50,8 +50,8 @@ export declare class AiEditingController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.JobStatus;
         progress: number;
+        status: import(".prisma/client").$Enums.JobStatus;
         projectId: string;
         errorMessage: string | null;
         jobType: string;

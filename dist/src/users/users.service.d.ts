@@ -18,8 +18,8 @@ export declare class UsersService {
     getUsageStats(userId: string): Promise<{
         subscription: {
             plan: {
-                name: string;
                 id: string;
+                name: string;
                 sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
@@ -74,13 +74,13 @@ export declare class UsersService {
             };
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
             s3Key: string | null;
             s3Url: string | null;
             duration: number | null;
-            status: import(".prisma/client").$Enums.JobStatus;
+            createdAt: Date;
+            updatedAt: Date;
             progress: number;
+            status: import(".prisma/client").$Enums.JobStatus;
             expiresAt: Date | null;
             projectId: string;
             resolution: import(".prisma/client").$Enums.ExportResolution;

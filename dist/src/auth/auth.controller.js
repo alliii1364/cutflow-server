@@ -25,6 +25,7 @@ const forgot_password_dto_1 = require("./dto/forgot-password.dto");
 const reset_password_dto_1 = require("./dto/reset-password.dto");
 const refresh_token_dto_1 = require("./dto/refresh-token.dto");
 const verify_otp_dto_1 = require("./dto/verify-otp.dto");
+const verify_email_dto_1 = require("./dto/verify-email.dto");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 let AuthController = class AuthController {
     constructor(authService) {
@@ -48,6 +49,12 @@ let AuthController = class AuthController {
     }
     async logout(userId, dto) {
         return this.authService.logout(userId, dto.refreshToken);
+    }
+    async verifyEmail(dto) {
+        return this.authService.verifyEmailOtp(dto.email, dto.otp);
+    }
+    async resendVerification(dto) {
+        return this.authService.resendEmailVerification(dto.email);
     }
     async forgotPassword(dto) {
         return this.authService.forgotPassword(dto.email);
@@ -119,6 +126,26 @@ __decorate([
     __metadata("design:paramtypes", [String, refresh_token_dto_1.RefreshTokenDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "logout", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('verify-email'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Verify signup OTP and activate account' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [verify_email_dto_1.VerifyEmailDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyEmail", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('resend-verification'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Resend email verification OTP' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [verify_email_dto_1.ResendVerificationDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resendVerification", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('forgot-password'),

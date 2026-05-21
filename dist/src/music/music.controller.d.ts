@@ -34,10 +34,10 @@ export declare class MusicController {
     }>;
     getProjectMusic(userId: string, projectId: string): Promise<{
         id: string;
-        createdAt: Date;
         s3Key: string;
         s3Url: string;
         duration: number;
+        createdAt: Date;
         style: import(".prisma/client").$Enums.MusicStyle;
         isAiGenerated: boolean;
         beatTimestamps: import("@prisma/client/runtime/library").JsonValue | null;

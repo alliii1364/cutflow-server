@@ -3,8 +3,8 @@ export declare class SubscriptionsController {
     private subscriptionsService;
     constructor(subscriptionsService: SubscriptionsService);
     getPlans(): Promise<{
-        name: string;
         id: string;
+        name: string;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -28,8 +28,8 @@ export declare class SubscriptionsController {
     }[]>;
     getMySubscription(userId: string): Promise<{
         plan: {
-            name: string;
             id: string;
+            name: string;
             sortOrder: number;
             isActive: boolean;
             createdAt: Date;

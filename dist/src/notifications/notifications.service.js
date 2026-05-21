@@ -8,19 +8,27 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var NotificationsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
 const mail_1 = require("@sendgrid/mail");
-let NotificationsService = class NotificationsService {
+let NotificationsService = NotificationsService_1 = class NotificationsService {
     constructor(prisma, configService) {
         this.prisma = prisma;
         this.configService = configService;
+        this.logger = new common_1.Logger(NotificationsService_1.name);
+        this.sgReady = false;
+        this.fromEmail = '';
         const apiKey = this.configService.get('SENDGRID_API_KEY');
-        if (apiKey) {
+        const from = this.configService.get('SENDGRID_FROM_EMAIL');
+        if (apiKey && from) {
             mail_1.default.setApiKey(apiKey);
+            this.fromEmail = from;
+            this.sgReady = true;
+            this.logger.log(`Email ready via SendGrid (${from})`);
         }
     }
     async getUserNotifications(userId, page = 1, limit = 20) {
@@ -93,29 +101,54 @@ let NotificationsService = class NotificationsService {
         }
     }
     async sendEmail(userId, subject, message, actionUrl) {
-        const user = await this.prisma.user.findUnique({
-            where: { id: userId },
-        });
-        if (!user || !user.email)
+        if (!this.sgReady)
             return;
-        const fromEmail = this.configService.get('SENDGRID_FROM_EMAIL') || 'noreply@cutflow.app';
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user?.email)
+            return;
         try {
             await mail_1.default.send({
+                from: { email: this.fromEmail, name: 'CutFlow' },
                 to: user.email,
-                from: fromEmail,
                 subject,
                 text: message,
-                html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>${subject}</h2>
-            <p>${message}</p>
-            ${actionUrl ? `<a href="${actionUrl}" style="display: inline-block; padding: 12px 24px; background: #0070f3; color: white; text-decoration: none; border-radius: 4px;">View Details</a>` : ''}
-          </div>
-        `,
+                html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto"><h2>${subject}</h2><p>${message}</p>${actionUrl ? `<a href="${actionUrl}" style="display:inline-block;padding:12px 24px;background:#0070f3;color:#fff;text-decoration:none;border-radius:4px">View Details</a>` : ''}</div>`,
             });
         }
         catch (error) {
-            console.error('Failed to send email:', error);
+            this.logger.error('Failed to send email:', error);
+        }
+    }
+    async sendOtpEmail(toEmail, otp, purpose) {
+        if (!this.sgReady) {
+            this.logger.warn('SendGrid not configured — skipping OTP');
+            return;
+        }
+        const subject = purpose === 'signup' ? 'Verify your CutFlow account' : 'Your CutFlow password reset code';
+        const heading = purpose === 'signup' ? 'Verify your email' : 'Reset your password';
+        const body = purpose === 'signup'
+            ? 'Use the code below to verify your email address and activate your CutFlow account.'
+            : 'Use the code below to reset your CutFlow password. This code expires in 15 minutes.';
+        try {
+            await mail_1.default.send({
+                from: { email: this.fromEmail, name: 'CutFlow' },
+                to: toEmail,
+                subject,
+                text: `${heading}\n\nYour code: ${otp}\n\nExpires in 15 minutes.`,
+                html: `
+          <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff;border-radius:8px;border:1px solid #e5e7eb">
+            <h2 style="margin:0 0 8px;font-size:20px;color:#111">${heading}</h2>
+            <p style="margin:0 0 24px;color:#6b7280;font-size:14px">${body}</p>
+            <div style="text-align:center;margin:24px 0">
+              <span style="display:inline-block;font-size:32px;font-weight:700;letter-spacing:10px;color:#111;background:#f3f4f6;padding:16px 24px;border-radius:8px">${otp}</span>
+            </div>
+            <p style="margin:24px 0 0;color:#9ca3af;font-size:12px">Expires in 15 minutes. If you didn't request this, ignore this email.</p>
+          </div>`,
+            });
+            this.logger.log(`OTP sent to ${toEmail}`);
+        }
+        catch (error) {
+            this.logger.error(`Failed to send OTP to ${toEmail}:`, error);
         }
     }
     async notifyExportComplete(userId, exportId, projectTitle) {
@@ -132,7 +165,7 @@ let NotificationsService = class NotificationsService {
     }
 };
 exports.NotificationsService = NotificationsService;
-exports.NotificationsService = NotificationsService = __decorate([
+exports.NotificationsService = NotificationsService = NotificationsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         config_1.ConfigService])

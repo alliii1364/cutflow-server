@@ -15,8 +15,8 @@ export declare class JwtStrategy extends JwtStrategy_base {
     }): Promise<{
         subscription: {
             plan: {
-                name: string;
                 id: string;
+                name: string;
                 sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;

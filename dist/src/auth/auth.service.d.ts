@@ -1,18 +1,28 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class AuthService {
     private prisma;
     private jwtService;
     private configService;
-    constructor(prisma: PrismaService, jwtService: JwtService, configService: ConfigService);
+    private notifications;
+    constructor(prisma: PrismaService, jwtService: JwtService, configService: ConfigService, notifications: NotificationsService);
     register(email: string, password: string, firstName?: string, lastName?: string): Promise<{
+        requiresVerification: boolean;
+        email: string;
+    }>;
+    private issueEmailVerificationOtp;
+    verifyEmailOtp(email: string, otp: string): Promise<{
         user: any;
         tokens: {
             accessToken: string;
             refreshToken: string;
             expiresIn: number;
         };
+    }>;
+    resendEmailVerification(email: string): Promise<{
+        message: string;
     }>;
     login(email: string, password: string): Promise<{
         user: any;
@@ -57,8 +67,8 @@ export declare class AuthService {
             emailVerified: boolean;
             subscription: {
                 plan: {
-                    name: string;
                     id: string;
+                    name: string;
                     sortOrder: number;
                     isActive: boolean;
                     createdAt: Date;

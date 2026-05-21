@@ -14,11 +14,16 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const storage_service_1 = require("../storage/storage.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
+const cache_service_1 = require("../cache/cache.service");
+const BROLL_LIBRARY_CACHE_KEY = 'broll:library:v7';
+const BROLL_LIBRARY_TTL = 1800;
+const BROLL_SEARCH_TTL = 300;
 let MediaService = class MediaService {
-    constructor(prisma, storage, subscriptionsService) {
+    constructor(prisma, storage, subscriptionsService, cache) {
         this.prisma = prisma;
         this.storage = storage;
         this.subscriptionsService = subscriptionsService;
+        this.cache = cache;
     }
     async getPresignedUploadUrl(userId, fileName, contentType, fileSize, isBroll = false) {
         const check = await this.subscriptionsService.checkVideoCreationAllowed(userId);
@@ -140,32 +145,73 @@ let MediaService = class MediaService {
             message: 'AI B-roll generation queued',
         };
     }
-    async getBrollLibrary(q) {
+    async getBrollLibrary(query = {}) {
+        const term = query.q?.trim() ?? '';
+        const { gender, ethnicity, minAge, maxAge, nationalities } = query;
+        const hasFilters = Boolean(gender || ethnicity || minAge != null || maxAge != null || (nationalities && nationalities.length));
+        const cacheKey = !term && !hasFilters
+            ? BROLL_LIBRARY_CACHE_KEY
+            : `broll:search:${this.buildFilterCacheKey(term, query)}`;
+        const ttl = !term && !hasFilters ? BROLL_LIBRARY_TTL : BROLL_SEARCH_TTL;
+        const cached = await this.cache.get(cacheKey);
+        if (cached)
+            return cached;
+        const itemSelect = {
+            id: true,
+            name: true,
+            description: true,
+            tags: true,
+            s3Url: true,
+            thumbnailUrl: true,
+            type: true,
+            isPremium: true,
+            gender: true,
+            ethnicity: true,
+            age: true,
+            nationality: true,
+        };
         const itemWhere = { isActive: true };
-        if (q) {
-            const term = q.trim();
+        if (term) {
             itemWhere.OR = [
                 { name: { contains: term, mode: 'insensitive' } },
                 { tags: { has: term } },
             ];
         }
+        if (gender)
+            itemWhere.gender = gender;
+        if (ethnicity)
+            itemWhere.ethnicity = ethnicity;
+        if (nationalities && nationalities.length)
+            itemWhere.nationality = { in: nationalities };
+        if (minAge != null || maxAge != null) {
+            itemWhere.age = {};
+            if (minAge != null)
+                itemWhere.age.gte = minAge;
+            if (maxAge != null)
+                itemWhere.age.lte = maxAge;
+        }
         const categories = await this.prisma.brollCategory.findMany({
             where: { isActive: true },
             orderBy: { sortOrder: 'asc' },
-            include: {
+            select: {
+                id: true,
+                name: true,
                 subcategories: {
                     where: { isActive: true },
                     orderBy: { sortOrder: 'asc' },
-                    include: {
+                    select: {
+                        id: true,
+                        name: true,
                         items: {
                             where: itemWhere,
                             orderBy: { sortOrder: 'asc' },
+                            select: itemSelect,
                         },
                     },
                 },
             },
         });
-        const filtered = q
+        const filtered = term || hasFilters
             ? categories
                 .map((cat) => ({
                 ...cat,
@@ -173,7 +219,7 @@ let MediaService = class MediaService {
             }))
                 .filter((cat) => cat.subcategories.length > 0)
             : categories;
-        return {
+        const result = {
             success: true,
             data: filtered.map((cat) => ({
                 id: cat.id,
@@ -190,10 +236,27 @@ let MediaService = class MediaService {
                         thumbnail_url: item.thumbnailUrl,
                         type: item.type,
                         is_premium: item.isPremium,
+                        gender: item.gender,
+                        ethnicity: item.ethnicity,
+                        age: item.age,
+                        nationality: item.nationality,
                     })),
                 })),
             })),
         };
+        void this.cache.set(cacheKey, result, ttl);
+        return result;
+    }
+    buildFilterCacheKey(term, q) {
+        const parts = [
+            `q=${term.toLowerCase()}`,
+            `g=${q.gender ?? ''}`,
+            `e=${q.ethnicity ?? ''}`,
+            `min=${q.minAge ?? ''}`,
+            `max=${q.maxAge ?? ''}`,
+            `n=${(q.nationalities ?? []).slice().sort().join(',')}`,
+        ];
+        return parts.join('|');
     }
     async createBrollCategory(name, sortOrder = 0) {
         return this.prisma.brollCategory.create({
@@ -228,6 +291,7 @@ exports.MediaService = MediaService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         storage_service_1.StorageService,
-        subscriptions_service_1.SubscriptionsService])
+        subscriptions_service_1.SubscriptionsService,
+        cache_service_1.CacheService])
 ], MediaService);
 //# sourceMappingURL=media.service.js.map

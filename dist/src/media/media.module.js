@@ -14,12 +14,13 @@ const brolls_controller_1 = require("./brolls.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
 const storage_module_1 = require("../storage/storage.module");
 const subscriptions_module_1 = require("../subscriptions/subscriptions.module");
+const cache_module_1 = require("../cache/cache.module");
 let MediaModule = class MediaModule {
 };
 exports.MediaModule = MediaModule;
 exports.MediaModule = MediaModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, storage_module_1.StorageModule, subscriptions_module_1.SubscriptionsModule],
+        imports: [prisma_module_1.PrismaModule, storage_module_1.StorageModule, subscriptions_module_1.SubscriptionsModule, cache_module_1.CacheModule],
         providers: [media_service_1.MediaService],
         controllers: [media_controller_1.MediaController, brolls_controller_1.BrollsController],
         exports: [media_service_1.MediaService],

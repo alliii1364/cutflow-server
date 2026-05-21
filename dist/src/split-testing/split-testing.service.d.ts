@@ -11,8 +11,8 @@ export declare class SplitTestingService {
         testVoice?: boolean;
         variantCount?: number;
     }): Promise<{
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
         status: import(".prisma/client").$Enums.JobStatus;
@@ -23,8 +23,8 @@ export declare class SplitTestingService {
     }>;
     getVariants(userId: string, sessionId: string): Promise<{
         session: {
-            name: string;
             id: string;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
             status: import(".prisma/client").$Enums.JobStatus;
@@ -41,8 +41,8 @@ export declare class SplitTestingService {
         message: string;
     }>;
     getExportStatus(userId: string, sessionId: string): Promise<{
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
         status: import(".prisma/client").$Enums.JobStatus;

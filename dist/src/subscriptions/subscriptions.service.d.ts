@@ -6,8 +6,8 @@ export declare class SubscriptionsService {
     private stripe;
     constructor(prisma: PrismaService, configService: ConfigService);
     getPlans(): Promise<{
-        name: string;
         id: string;
+        name: string;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -31,8 +31,8 @@ export declare class SubscriptionsService {
     }[]>;
     getUserSubscription(userId: string): Promise<{
         plan: {
-            name: string;
             id: string;
+            name: string;
             sortOrder: number;
             isActive: boolean;
             createdAt: Date;

@@ -14,13 +14,15 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const jwt_1 = require("@nestjs/jwt");
 const prisma_service_1 = require("../prisma/prisma.service");
+const notifications_service_1 = require("../notifications/notifications.service");
 const bcrypt = require("bcryptjs");
 const uuid_1 = require("uuid");
 let AuthService = class AuthService {
-    constructor(prisma, jwtService, configService) {
+    constructor(prisma, jwtService, configService, notifications) {
         this.prisma = prisma;
         this.jwtService = jwtService;
         this.configService = configService;
+        this.notifications = notifications;
     }
     async register(email, password, firstName, lastName) {
         const existingUser = await this.prisma.user.findUnique({
@@ -51,6 +53,7 @@ let AuthService = class AuthService {
                 passwordHash,
                 firstName,
                 lastName,
+                emailVerified: true,
                 subscription: {
                     create: {
                         planId: freePlan.id,
@@ -64,12 +67,58 @@ let AuthService = class AuthService {
                 },
             },
         });
+        return { requiresVerification: false, email };
+    }
+    async issueEmailVerificationOtp(userId, email) {
+        await this.prisma.emailVerificationToken.updateMany({
+            where: { userId, usedAt: null },
+            data: { usedAt: new Date() },
+        });
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await this.prisma.emailVerificationToken.create({
+            data: {
+                userId,
+                token: otp,
+                expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+            },
+        });
+        void this.notifications.sendOtpEmail(email, otp, 'signup');
+    }
+    async verifyEmailOtp(email, otp) {
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+            include: { subscription: { include: { plan: true } } },
+        });
+        if (!user)
+            throw new common_1.UnauthorizedException('Invalid code');
+        const record = await this.prisma.emailVerificationToken.findFirst({
+            where: { userId: user.id, token: otp, usedAt: null },
+            orderBy: { createdAt: 'desc' },
+        });
+        if (!record || record.expiresAt < new Date()) {
+            throw new common_1.UnauthorizedException('Invalid or expired code');
+        }
+        await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { id: user.id },
+                data: { emailVerified: true, lastLoginAt: new Date() },
+            }),
+            this.prisma.emailVerificationToken.update({
+                where: { id: record.id },
+                data: { usedAt: new Date() },
+            }),
+        ]);
         const tokens = await this.generateTokens(user.id, user.email, user.role);
         await this.saveRefreshToken(user.id, tokens.refreshToken);
-        return {
-            user: this.sanitizeUser(user),
-            tokens,
-        };
+        return { user: this.sanitizeUser(user), tokens };
+    }
+    async resendEmailVerification(email) {
+        const user = await this.prisma.user.findUnique({ where: { email } });
+        if (!user || user.emailVerified) {
+            return { message: 'If an account awaiting verification exists, a new code has been sent' };
+        }
+        await this.issueEmailVerificationOtp(user.id, email);
+        return { message: 'If an account awaiting verification exists, a new code has been sent' };
     }
     async login(email, password) {
         const user = await this.prisma.user.findUnique({
@@ -141,6 +190,7 @@ let AuthService = class AuthService {
                 expiresAt: new Date(Date.now() + 15 * 60 * 1000),
             },
         });
+        void this.notifications.sendOtpEmail(email, otp, 'password-reset');
         return { message: 'If an account exists, a reset code has been sent' };
     }
     async verifyResetOtp(email, otp) {
@@ -248,6 +298,7 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        notifications_service_1.NotificationsService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

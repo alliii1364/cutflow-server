@@ -491,6 +491,10 @@ model BrollItem {
   isPremium             Boolean         @default(false)
   duration              Int?            // in seconds for videos
   tags                  String[]        @default([])
+  gender                String?         // male | female
+  ethnicity             String?         // white | black | asian | spanish | swedish | italian | brazilian | ukrainian | european | british
+  age                   Int?
+  nationality           String?         // lowercase code, e.g. american, british
   sortOrder             Int             @default(0)
   isActive              Boolean         @default(true)
   createdAt             DateTime        @default(now())
@@ -498,6 +502,10 @@ model BrollItem {
 
   subcategory           BrollSubcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
 
+  @@index([gender])
+  @@index([ethnicity])
+  @@index([nationality])
+  @@index([age])
   @@map("broll_items")
 }
 

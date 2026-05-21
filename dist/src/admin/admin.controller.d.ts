@@ -9,8 +9,8 @@ export declare class AdminController {
             _count: any;
             subscription: {
                 plan: {
-                    name: string;
                     id: string;
+                    name: string;
                     sortOrder: number;
                     isActive: boolean;
                     createdAt: Date;
@@ -76,8 +76,8 @@ export declare class AdminController {
     }): Promise<{
         subscription: {
             plan: {
-                name: string;
                 id: string;
+                name: string;
                 sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
@@ -133,8 +133,8 @@ export declare class AdminController {
     getAllSubscriptions(page?: number, limit?: number): Promise<{
         data: ({
             plan: {
-                name: string;
                 id: string;
+                name: string;
                 sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
@@ -186,16 +186,16 @@ export declare class AdminController {
         };
     }>;
     createTemplate(body: any): Promise<{
-        tags: string[];
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
+        thumbnailUrl: string | null;
+        tags: string[];
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         category: string;
-        description: string | null;
-        thumbnailUrl: string | null;
         tier: import(".prisma/client").$Enums.TemplateTier;
         style: string | null;
         estimatedDuration: number | null;
@@ -205,16 +205,16 @@ export declare class AdminController {
         industry: string | null;
     }>;
     updateTemplate(templateId: string, body: any): Promise<{
-        tags: string[];
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
+        thumbnailUrl: string | null;
+        tags: string[];
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         category: string;
-        description: string | null;
-        thumbnailUrl: string | null;
         tier: import(".prisma/client").$Enums.TemplateTier;
         style: string | null;
         estimatedDuration: number | null;
@@ -228,62 +228,62 @@ export declare class AdminController {
     }>;
     createAsset(body: any): Promise<{
         metadata: import("@prisma/client/runtime/library").JsonValue;
-        tags: string[];
-        name: string;
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        category: string;
+        name: string;
         s3Key: string;
         s3Url: string;
         thumbnailUrl: string | null;
         type: import(".prisma/client").$Enums.AssetType;
+        tags: string[];
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        category: string;
         tier: import(".prisma/client").$Enums.TemplateTier;
     }>;
     updateAsset(assetId: string, body: any): Promise<{
         metadata: import("@prisma/client/runtime/library").JsonValue;
-        tags: string[];
-        name: string;
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        category: string;
+        name: string;
         s3Key: string;
         s3Url: string;
         thumbnailUrl: string | null;
         type: import(".prisma/client").$Enums.AssetType;
+        tags: string[];
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        category: string;
         tier: import(".prisma/client").$Enums.TemplateTier;
     }>;
     getFeatureFlags(): Promise<{
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
         key: string;
         enabled: boolean;
         targetPercent: number | null;
         allowedUserIds: string[];
     }[]>;
     createFeatureFlag(body: any): Promise<{
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
         key: string;
         enabled: boolean;
         targetPercent: number | null;
         allowedUserIds: string[];
     }>;
     updateFeatureFlag(flagId: string, body: any): Promise<{
-        name: string;
         id: string;
+        name: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
         key: string;
         enabled: boolean;
         targetPercent: number | null;

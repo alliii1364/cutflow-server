@@ -1,11 +1,15 @@
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { CacheService } from '../cache/cache.service';
+import { GetBrollLibraryDto } from './dto/get-broll-library.dto';
 export declare class MediaService {
     private prisma;
     private storage;
     private subscriptionsService;
-    constructor(prisma: PrismaService, storage: StorageService, subscriptionsService: SubscriptionsService);
+    private cache;
+    constructor(prisma: PrismaService, storage: StorageService, subscriptionsService: SubscriptionsService, cache: CacheService);
     getPresignedUploadUrl(userId: string, fileName: string, contentType: string, fileSize: number, isBroll?: boolean): Promise<{
         uploadUrl: string;
         key: string;
@@ -21,13 +25,13 @@ export declare class MediaService {
         width?: number;
         height?: number;
     }, isBroll?: boolean): Promise<{
-        metadata: import("@prisma/client/runtime/library").JsonValue;
+        metadata: Prisma.JsonValue;
         id: string;
-        createdAt: Date;
         s3Key: string;
         s3Url: string;
         type: import(".prisma/client").$Enums.MediaType;
         duration: number | null;
+        createdAt: Date;
         size: number;
         projectId: string;
         width: number | null;
@@ -38,13 +42,13 @@ export declare class MediaService {
         isPrimary: boolean;
     }>;
     getProjectMedia(projectId: string, userId: string): Promise<{
-        metadata: import("@prisma/client/runtime/library").JsonValue;
+        metadata: Prisma.JsonValue;
         id: string;
-        createdAt: Date;
         s3Key: string;
         s3Url: string;
         type: import(".prisma/client").$Enums.MediaType;
         duration: number | null;
+        createdAt: Date;
         size: number;
         projectId: string;
         width: number | null;
@@ -72,38 +76,22 @@ export declare class MediaService {
         status: string;
         message: string;
     }>;
-    getBrollLibrary(q?: string): Promise<{
+    getBrollLibrary(query?: GetBrollLibraryDto): Promise<{
         success: boolean;
-        data: {
-            id: string;
-            name: string;
-            subcategories: {
-                id: string;
-                name: string;
-                items: {
-                    id: string;
-                    name: string;
-                    description: string;
-                    tags: string[];
-                    url: string;
-                    thumbnail_url: string;
-                    type: "image" | "video";
-                    is_premium: boolean;
-                }[];
-            }[];
-        }[];
+        data: unknown[];
     }>;
+    private buildFilterCacheKey;
     createBrollCategory(name: string, sortOrder?: number): Promise<{
-        name: string;
         id: string;
+        name: string;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
     }>;
     createBrollSubcategory(categoryId: string, name: string, sortOrder?: number): Promise<{
-        name: string;
         id: string;
+        name: string;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -121,20 +109,24 @@ export declare class MediaService {
         duration?: number;
         tags?: string[];
     }, sortOrder?: number): Promise<{
-        tags: string[];
-        name: string;
         id: string;
-        sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        s3Key: string;
         subcategoryId: string;
+        name: string;
         description: string | null;
+        s3Key: string;
         s3Url: string;
         thumbnailUrl: string | null;
         type: string;
         isPremium: boolean;
         duration: number | null;
+        tags: string[];
+        gender: string | null;
+        ethnicity: string | null;
+        age: number | null;
+        nationality: string | null;
+        sortOrder: number;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
 }

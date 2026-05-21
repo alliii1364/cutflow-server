@@ -10,11 +10,11 @@ export declare class VideosController {
         mediaFiles: {
             metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
-            createdAt: Date;
             s3Key: string;
             s3Url: string;
             type: import(".prisma/client").$Enums.MediaType;
             duration: number | null;
+            createdAt: Date;
             size: number;
             projectId: string;
             width: number | null;
@@ -27,11 +27,11 @@ export declare class VideosController {
     } & {
         metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
         thumbnailUrl: string | null;
         duration: number | null;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.VideoStatus;
         userId: string;
         title: string;
@@ -50,11 +50,11 @@ export declare class VideosController {
             mediaFiles: {
                 metadata: import("@prisma/client/runtime/library").JsonValue;
                 id: string;
-                createdAt: Date;
                 s3Key: string;
                 s3Url: string;
                 type: import(".prisma/client").$Enums.MediaType;
                 duration: number | null;
+                createdAt: Date;
                 size: number;
                 projectId: string;
                 width: number | null;
@@ -67,11 +67,11 @@ export declare class VideosController {
         } & {
             metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
             description: string | null;
             thumbnailUrl: string | null;
             duration: number | null;
+            createdAt: Date;
+            updatedAt: Date;
             status: import(".prisma/client").$Enums.VideoStatus;
             userId: string;
             title: string;
@@ -105,10 +105,10 @@ export declare class VideosController {
         };
         musicTrack: {
             id: string;
-            createdAt: Date;
             s3Key: string;
             s3Url: string;
             duration: number;
+            createdAt: Date;
             style: import(".prisma/client").$Enums.MusicStyle;
             isAiGenerated: boolean;
             beatTimestamps: import("@prisma/client/runtime/library").JsonValue | null;
@@ -116,29 +116,29 @@ export declare class VideosController {
         };
         voiceTrack: {
             id: string;
-            createdAt: Date;
             s3Key: string;
             s3Url: string;
             duration: number;
+            gender: string | null;
+            age: string | null;
+            createdAt: Date;
             voiceId: string;
             voiceName: string;
             transcript: string;
             accent: string | null;
-            gender: string | null;
-            age: string | null;
         };
         templateApplication: {
             template: {
-                tags: string[];
-                name: string;
                 id: string;
+                name: string;
+                description: string | null;
+                thumbnailUrl: string | null;
+                tags: string[];
                 sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
                 category: string;
-                description: string | null;
-                thumbnailUrl: string | null;
                 tier: import(".prisma/client").$Enums.TemplateTier;
                 style: string | null;
                 estimatedDuration: number | null;
@@ -150,18 +150,18 @@ export declare class VideosController {
         } & {
             id: string;
             createdAt: Date;
-            projectId: string;
             templateId: string;
+            projectId: string;
             appliedConfig: import("@prisma/client/runtime/library").JsonValue;
         };
         mediaFiles: {
             metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
-            createdAt: Date;
             s3Key: string;
             s3Url: string;
             type: import(".prisma/client").$Enums.MediaType;
             duration: number | null;
+            createdAt: Date;
             size: number;
             projectId: string;
             width: number | null;
@@ -173,13 +173,13 @@ export declare class VideosController {
         }[];
         exports: {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
             s3Key: string | null;
             s3Url: string | null;
             duration: number | null;
-            status: import(".prisma/client").$Enums.JobStatus;
+            createdAt: Date;
+            updatedAt: Date;
             progress: number;
+            status: import(".prisma/client").$Enums.JobStatus;
             expiresAt: Date | null;
             projectId: string;
             resolution: import(".prisma/client").$Enums.ExportResolution;
@@ -213,8 +213,8 @@ export declare class VideosController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.JobStatus;
             progress: number;
+            status: import(".prisma/client").$Enums.JobStatus;
             projectId: string;
             errorMessage: string | null;
             jobType: string;
@@ -227,11 +227,11 @@ export declare class VideosController {
     } & {
         metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
         thumbnailUrl: string | null;
         duration: number | null;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.VideoStatus;
         userId: string;
         title: string;
@@ -259,11 +259,11 @@ export declare class VideosController {
         mediaFiles: {
             metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
-            createdAt: Date;
             s3Key: string;
             s3Url: string;
             type: import(".prisma/client").$Enums.MediaType;
             duration: number | null;
+            createdAt: Date;
             size: number;
             projectId: string;
             width: number | null;
@@ -294,11 +294,11 @@ export declare class VideosController {
     } & {
         metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         description: string | null;
         thumbnailUrl: string | null;
         duration: number | null;
+        createdAt: Date;
+        updatedAt: Date;
         status: import(".prisma/client").$Enums.VideoStatus;
         userId: string;
         title: string;
@@ -318,8 +318,8 @@ export declare class VideosController {
         status: import(".prisma/client").$Enums.VideoStatus;
         processingJobs: {
             id: string;
-            status: import(".prisma/client").$Enums.JobStatus;
             progress: number;
+            status: import(".prisma/client").$Enums.JobStatus;
             jobType: string;
         }[];
     }>;
@@ -343,11 +343,11 @@ export declare class VideosController {
             mediaFiles: {
                 metadata: import("@prisma/client/runtime/library").JsonValue;
                 id: string;
-                createdAt: Date;
                 s3Key: string;
                 s3Url: string;
                 type: import(".prisma/client").$Enums.MediaType;
                 duration: number | null;
+                createdAt: Date;
                 size: number;
                 projectId: string;
                 width: number | null;
@@ -390,10 +390,10 @@ export declare class VideosController {
             };
             musicTrack: {
                 id: string;
-                createdAt: Date;
                 s3Key: string;
                 s3Url: string;
                 duration: number;
+                createdAt: Date;
                 style: import(".prisma/client").$Enums.MusicStyle;
                 isAiGenerated: boolean;
                 beatTimestamps: import("@prisma/client/runtime/library").JsonValue | null;
@@ -401,16 +401,16 @@ export declare class VideosController {
             };
             voiceTrack: {
                 id: string;
-                createdAt: Date;
                 s3Key: string;
                 s3Url: string;
                 duration: number;
+                gender: string | null;
+                age: string | null;
+                createdAt: Date;
                 voiceId: string;
                 voiceName: string;
                 transcript: string;
                 accent: string | null;
-                gender: string | null;
-                age: string | null;
             };
         };
         state: Record<string, any>;
@@ -433,11 +433,11 @@ export declare class VideosController {
                 mediaFiles: {
                     metadata: import("@prisma/client/runtime/library").JsonValue;
                     id: string;
-                    createdAt: Date;
                     s3Key: string;
                     s3Url: string;
                     type: import(".prisma/client").$Enums.MediaType;
                     duration: number | null;
+                    createdAt: Date;
                     size: number;
                     projectId: string;
                     width: number | null;
@@ -480,10 +480,10 @@ export declare class VideosController {
                 };
                 musicTrack: {
                     id: string;
-                    createdAt: Date;
                     s3Key: string;
                     s3Url: string;
                     duration: number;
+                    createdAt: Date;
                     style: import(".prisma/client").$Enums.MusicStyle;
                     isAiGenerated: boolean;
                     beatTimestamps: import("@prisma/client/runtime/library").JsonValue | null;
@@ -491,16 +491,16 @@ export declare class VideosController {
                 };
                 voiceTrack: {
                     id: string;
-                    createdAt: Date;
                     s3Key: string;
                     s3Url: string;
                     duration: number;
+                    gender: string | null;
+                    age: string | null;
+                    createdAt: Date;
                     voiceId: string;
                     voiceName: string;
                     transcript: string;
                     accent: string | null;
-                    gender: string | null;
-                    age: string | null;
                 };
             };
             state: Record<string, any>;
@@ -517,13 +517,13 @@ export declare class VideosController {
     }>;
     getProjectExports(userId: string, projectId: string): Promise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         s3Key: string | null;
         s3Url: string | null;
         duration: number | null;
-        status: import(".prisma/client").$Enums.JobStatus;
+        createdAt: Date;
+        updatedAt: Date;
         progress: number;
+        status: import(".prisma/client").$Enums.JobStatus;
         expiresAt: Date | null;
         projectId: string;
         resolution: import(".prisma/client").$Enums.ExportResolution;
@@ -541,13 +541,13 @@ export declare class VideosController {
         };
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         s3Key: string | null;
         s3Url: string | null;
         duration: number | null;
-        status: import(".prisma/client").$Enums.JobStatus;
+        createdAt: Date;
+        updatedAt: Date;
         progress: number;
+        status: import(".prisma/client").$Enums.JobStatus;
         expiresAt: Date | null;
         projectId: string;
         resolution: import(".prisma/client").$Enums.ExportResolution;

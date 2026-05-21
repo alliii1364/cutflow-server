@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { CacheService } from '../cache/cache.service';
+import { GetBrollLibraryDto } from './dto/get-broll-library.dto';
 
 // Bump the version suffix whenever the library shape or filter changes so stale
 // Redis entries from previous deploys don't keep leaking through.
-const BROLL_LIBRARY_CACHE_KEY = 'broll:library:v3';
+const BROLL_LIBRARY_CACHE_KEY = 'broll:library:v7';
 const BROLL_LIBRARY_TTL = 1800; // 30 minutes
 const BROLL_SEARCH_TTL = 300;   // 5 minutes
 
@@ -200,10 +202,18 @@ export class MediaService {
   }
 
   // B-roll Library Methods
-  async getBrollLibrary(q?: string) {
-    const term = q?.trim() ?? '';
-    const cacheKey = term ? `broll:search:${term.toLowerCase()}` : BROLL_LIBRARY_CACHE_KEY;
-    const ttl = term ? BROLL_SEARCH_TTL : BROLL_LIBRARY_TTL;
+  async getBrollLibrary(query: GetBrollLibraryDto = {}) {
+    const term = query.q?.trim() ?? '';
+    const { gender, ethnicity, minAge, maxAge, nationalities } = query;
+
+    const hasFilters = Boolean(
+      gender || ethnicity || minAge != null || maxAge != null || (nationalities && nationalities.length),
+    );
+
+    const cacheKey = !term && !hasFilters
+      ? BROLL_LIBRARY_CACHE_KEY
+      : `broll:search:${this.buildFilterCacheKey(term, query)}`;
+    const ttl = !term && !hasFilters ? BROLL_LIBRARY_TTL : BROLL_SEARCH_TTL;
 
     const cached = await this.cache.get<{ success: boolean; data: unknown[] }>(cacheKey);
     if (cached) return cached;
@@ -217,17 +227,28 @@ export class MediaService {
       thumbnailUrl: true,
       type: true,
       isPremium: true,
+      gender: true,
+      ethnicity: true,
+      age: true,
+      nationality: true,
     } as const;
 
-    const itemWhere = term
-      ? {
-          isActive: true,
-          OR: [
-            { name: { contains: term, mode: 'insensitive' as const } },
-            { tags: { has: term } },
-          ],
-        }
-      : { isActive: true };
+    const itemWhere: Prisma.BrollItemWhereInput = { isActive: true };
+
+    if (term) {
+      itemWhere.OR = [
+        { name: { contains: term, mode: 'insensitive' } },
+        { tags: { has: term } },
+      ];
+    }
+    if (gender) itemWhere.gender = gender;
+    if (ethnicity) itemWhere.ethnicity = ethnicity;
+    if (nationalities && nationalities.length) itemWhere.nationality = { in: nationalities };
+    if (minAge != null || maxAge != null) {
+      itemWhere.age = {};
+      if (minAge != null) itemWhere.age.gte = minAge;
+      if (maxAge != null) itemWhere.age.lte = maxAge;
+    }
 
     const categories = await this.prisma.brollCategory.findMany({
       where: { isActive: true },
@@ -251,7 +272,7 @@ export class MediaService {
       },
     });
 
-    const filtered = term
+    const filtered = term || hasFilters
       ? categories
           .map((cat) => ({
             ...cat,
@@ -277,6 +298,10 @@ export class MediaService {
             thumbnail_url: item.thumbnailUrl,
             type: item.type as 'image' | 'video',
             is_premium: item.isPremium,
+            gender: item.gender,
+            ethnicity: item.ethnicity,
+            age: item.age,
+            nationality: item.nationality,
           })),
         })),
       })),
@@ -284,6 +309,18 @@ export class MediaService {
 
     void this.cache.set(cacheKey, result, ttl);
     return result;
+  }
+
+  private buildFilterCacheKey(term: string, q: GetBrollLibraryDto): string {
+    const parts = [
+      `q=${term.toLowerCase()}`,
+      `g=${q.gender ?? ''}`,
+      `e=${q.ethnicity ?? ''}`,
+      `min=${q.minAge ?? ''}`,
+      `max=${q.maxAge ?? ''}`,
+      `n=${(q.nationalities ?? []).slice().sort().join(',')}`,
+    ];
+    return parts.join('|');
   }
 
   // Admin methods for managing B-roll library

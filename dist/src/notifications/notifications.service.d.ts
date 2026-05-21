@@ -3,13 +3,16 @@ import { PrismaService } from '../prisma/prisma.service';
 export declare class NotificationsService {
     private prisma;
     private configService;
+    private readonly logger;
+    private sgReady;
+    private fromEmail;
     constructor(prisma: PrismaService, configService: ConfigService);
     getUserNotifications(userId: string, page?: number, limit?: number): Promise<{
         data: {
             metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
-            createdAt: Date;
             type: import(".prisma/client").$Enums.NotificationType;
+            createdAt: Date;
             userId: string;
             title: string;
             message: string;
@@ -27,8 +30,8 @@ export declare class NotificationsService {
     markAsRead(userId: string, notificationId: string): Promise<{
         metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
-        createdAt: Date;
         type: import(".prisma/client").$Enums.NotificationType;
+        createdAt: Date;
         userId: string;
         title: string;
         message: string;
@@ -65,6 +68,7 @@ export declare class NotificationsService {
     }>;
     createNotification(userId: string, type: 'EMAIL' | 'IN_APP' | 'BOTH', title: string, message: string, actionUrl?: string, metadata?: any): Promise<void>;
     private sendEmail;
+    sendOtpEmail(toEmail: string, otp: string, purpose: 'signup' | 'password-reset'): Promise<void>;
     notifyExportComplete(userId: string, exportId: string, projectTitle: string): Promise<void>;
     notifySubscriptionChange(userId: string, planName: string, status: string): Promise<void>;
 }

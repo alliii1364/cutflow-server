@@ -6,16 +6,13 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { VerifyEmailDto, ResendVerificationDto } from './dto/verify-email.dto';
 export declare class AuthController {
     private authService;
     constructor(authService: AuthService);
     register(dto: RegisterDto): Promise<{
-        user: any;
-        tokens: {
-            accessToken: string;
-            refreshToken: string;
-            expiresIn: number;
-        };
+        requiresVerification: boolean;
+        email: string;
     }>;
     login(dto: LoginDto): Promise<{
         user: any;
@@ -35,6 +32,17 @@ export declare class AuthController {
     }>;
     logout(userId: string, dto: RefreshTokenDto): Promise<{
         success: boolean;
+    }>;
+    verifyEmail(dto: VerifyEmailDto): Promise<{
+        user: any;
+        tokens: {
+            accessToken: string;
+            refreshToken: string;
+            expiresIn: number;
+        };
+    }>;
+    resendVerification(dto: ResendVerificationDto): Promise<{
+        message: string;
     }>;
     forgotPassword(dto: ForgotPasswordDto): Promise<{
         message: string;
@@ -61,8 +69,8 @@ export declare class AuthController {
             emailVerified: boolean;
             subscription: {
                 plan: {
-                    name: string;
                     id: string;
+                    name: string;
                     sortOrder: number;
                     isActive: boolean;
                     createdAt: Date;

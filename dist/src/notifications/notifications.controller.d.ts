@@ -6,8 +6,8 @@ export declare class NotificationsController {
         data: {
             metadata: import("@prisma/client/runtime/library").JsonValue;
             id: string;
-            createdAt: Date;
             type: import(".prisma/client").$Enums.NotificationType;
+            createdAt: Date;
             userId: string;
             title: string;
             message: string;
@@ -25,8 +25,8 @@ export declare class NotificationsController {
     markAsRead(userId: string, notificationId: string): Promise<{
         metadata: import("@prisma/client/runtime/library").JsonValue;
         id: string;
-        createdAt: Date;
         type: import(".prisma/client").$Enums.NotificationType;
+        createdAt: Date;
         userId: string;
         title: string;
         message: string;

@@ -15,13 +15,13 @@ export declare class AnalyticsController {
             };
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
             s3Key: string | null;
             s3Url: string | null;
             duration: number | null;
-            status: import(".prisma/client").$Enums.JobStatus;
+            createdAt: Date;
+            updatedAt: Date;
             progress: number;
+            status: import(".prisma/client").$Enums.JobStatus;
             expiresAt: Date | null;
             projectId: string;
             resolution: import(".prisma/client").$Enums.ExportResolution;
