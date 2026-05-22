@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
   const total = await prisma.brollItem.count();
   const sample = await prisma.brollItem.findMany({
     take: 10,
-    select: { id: true, name: true, tags: true, gender: true, ethnicity: true, age: true, nationality: true },
+    select: { id: true, name: true, tags: true, gender: true, ethnicity: true, age: true },
   });
   console.log('TOTAL_ITEMS:', total);
   console.log('SAMPLE:', JSON.stringify(sample, null, 2));

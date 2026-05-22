@@ -15,7 +15,7 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const storage_service_1 = require("../storage/storage.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
 const cache_service_1 = require("../cache/cache.service");
-const BROLL_LIBRARY_CACHE_KEY = 'broll:library:v7';
+const BROLL_LIBRARY_CACHE_KEY = 'broll:library:v8';
 const BROLL_LIBRARY_TTL = 1800;
 const BROLL_SEARCH_TTL = 300;
 let MediaService = class MediaService {
@@ -147,8 +147,8 @@ let MediaService = class MediaService {
     }
     async getBrollLibrary(query = {}) {
         const term = query.q?.trim() ?? '';
-        const { gender, ethnicity, minAge, maxAge, nationalities } = query;
-        const hasFilters = Boolean(gender || ethnicity || minAge != null || maxAge != null || (nationalities && nationalities.length));
+        const { gender, ethnicity, minAge, maxAge } = query;
+        const hasFilters = Boolean(gender || ethnicity || minAge != null || maxAge != null);
         const cacheKey = !term && !hasFilters
             ? BROLL_LIBRARY_CACHE_KEY
             : `broll:search:${this.buildFilterCacheKey(term, query)}`;
@@ -168,7 +168,6 @@ let MediaService = class MediaService {
             gender: true,
             ethnicity: true,
             age: true,
-            nationality: true,
         };
         const itemWhere = { isActive: true };
         if (term) {
@@ -181,8 +180,6 @@ let MediaService = class MediaService {
             itemWhere.gender = gender;
         if (ethnicity)
             itemWhere.ethnicity = ethnicity;
-        if (nationalities && nationalities.length)
-            itemWhere.nationality = { in: nationalities };
         if (minAge != null || maxAge != null) {
             itemWhere.age = {};
             if (minAge != null)
@@ -239,7 +236,6 @@ let MediaService = class MediaService {
                         gender: item.gender,
                         ethnicity: item.ethnicity,
                         age: item.age,
-                        nationality: item.nationality,
                     })),
                 })),
             })),
@@ -254,7 +250,6 @@ let MediaService = class MediaService {
             `e=${q.ethnicity ?? ''}`,
             `min=${q.minAge ?? ''}`,
             `max=${q.maxAge ?? ''}`,
-            `n=${(q.nationalities ?? []).slice().sort().join(',')}`,
         ];
         return parts.join('|');
     }

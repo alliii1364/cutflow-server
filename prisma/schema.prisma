@@ -494,7 +494,6 @@ model BrollItem {
   gender                String?         // male | female
   ethnicity             String?         // white | black | asian | spanish | swedish | italian | brazilian | ukrainian | european | british
   age                   Int?
-  nationality           String?         // lowercase code, e.g. american, british
   sortOrder             Int             @default(0)
   isActive              Boolean         @default(true)
   createdAt             DateTime        @default(now())
@@ -504,7 +503,6 @@ model BrollItem {
 
   @@index([gender])
   @@index([ethnicity])
-  @@index([nationality])
   @@index([age])
   @@map("broll_items")
 }

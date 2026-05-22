@@ -55,20 +55,15 @@ function toPublicUrl(base: string, s3Key: string): string {
 // Filter tokens within the tag list are extracted into structured fields and
 // stripped from `tags`. Recognized tokens (case-insensitive):
 //   gender:       "male" | "female"
-//   ethnicity:    "black" | "white"
+//   ethnicity:    one of white | black | asian | spanish | swedish | italian |
+//                          brazilian | ukrainian | european | british
 //   age:          "age:30" or "age=30"   (integer 0..120)
-//   nationality:  any of the 20 codes in NATIONALITY_CODES below
-// e.g. "#3 _ Smiling. portrait, male, white, american, age:28.mp4"
+// e.g. "#3 _ Smiling. portrait, male, white, age:28.mp4"
 
 const GENDER_TOKENS = new Set(['male', 'female']);
 const ETHNICITY_TOKENS = new Set([
   'white', 'black', 'asian', 'spanish', 'swedish', 'italian',
   'brazilian', 'ukrainian', 'european', 'british',
-]);
-const NATIONALITY_CODES = new Set([
-  'american', 'british', 'canadian', 'australian', 'indian', 'pakistani',
-  'chinese', 'japanese', 'korean', 'french', 'german', 'spanish', 'italian',
-  'brazilian', 'mexican', 'nigerian', 'egyptian', 'emirati', 'turkish', 'saudi',
 ]);
 
 interface ParsedFilename {
@@ -78,7 +73,6 @@ interface ParsedFilename {
   gender?: 'male' | 'female';
   ethnicity?: string;
   age?: number;
-  nationality?: string;
 }
 
 function parseFilename(filename: string): ParsedFilename {
@@ -108,7 +102,6 @@ function parseFilename(filename: string): ParsedFilename {
   let gender: 'male' | 'female' | undefined;
   let ethnicity: string | undefined;
   let age: number | undefined;
-  let nationality: string | undefined;
 
   for (const raw of rawTags) {
     const lower = raw.toLowerCase();
@@ -121,12 +114,11 @@ function parseFilename(filename: string): ParsedFilename {
     }
     if (GENDER_TOKENS.has(lower)) { gender = lower as 'male' | 'female'; continue; }
     if (ETHNICITY_TOKENS.has(lower)) { ethnicity = lower; continue; }
-    if (NATIONALITY_CODES.has(lower)) { nationality = lower; continue; }
 
     tags.push(raw);
   }
 
-  return { sortOrder, name, tags, gender, ethnicity, age, nationality };
+  return { sortOrder, name, tags, gender, ethnicity, age };
 }
 
 const MIME_MAP: Record<string, string> = {
@@ -311,10 +303,9 @@ async function main() {
           gender: parsed.gender ?? null,
           ethnicity: parsed.ethnicity ?? null,
           age: parsed.age ?? null,
-          nationality: parsed.nationality ?? null,
         },
       });
-      console.log(`  ✏️  ${parsed.name} [g=${parsed.gender ?? '-'} e=${parsed.ethnicity ?? '-'} a=${parsed.age ?? '-'} n=${parsed.nationality ?? '-'}]`);
+      console.log(`  ✏️  ${parsed.name} [g=${parsed.gender ?? '-'} e=${parsed.ethnicity ?? '-'} a=${parsed.age ?? '-'}]`);
       updated++;
     }
 
@@ -339,7 +330,7 @@ async function main() {
       continue;
     }
 
-    const { sortOrder, name, tags, gender, ethnicity, age, nationality } = parseFilename(file.absolutePath);
+    const { sortOrder, name, tags, gender, ethnicity, age } = parseFilename(file.absolutePath);
     const ext = path.extname(file.absolutePath).toLowerCase();
     const contentType = MIME_MAP[ext] || 'application/octet-stream';
 
@@ -390,11 +381,10 @@ async function main() {
         gender: gender ?? null,
         ethnicity: ethnicity ?? null,
         age: age ?? null,
-        nationality: nationality ?? null,
       },
     });
 
-    console.log(`  ✅ "${name}" [${tags.join(', ')}] g=${gender ?? '-'} e=${ethnicity ?? '-'} a=${age ?? '-'} n=${nationality ?? '-'}`);
+    console.log(`  ✅ "${name}" [${tags.join(', ')}] g=${gender ?? '-'} e=${ethnicity ?? '-'} a=${age ?? '-'}`);
     created++;
   }
 

@@ -20,5 +20,4 @@ export declare class GetBrollLibraryDto {
     ethnicity?: BrollEthnicity;
     minAge?: number;
     maxAge?: number;
-    nationalities?: string[];
 }

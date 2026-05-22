@@ -42,11 +42,6 @@ const ETHNICITY_TOKENS = new Set([
     'white', 'black', 'asian', 'spanish', 'swedish', 'italian',
     'brazilian', 'ukrainian', 'european', 'british',
 ]);
-const NATIONALITY_CODES = new Set([
-    'american', 'british', 'canadian', 'australian', 'indian', 'pakistani',
-    'chinese', 'japanese', 'korean', 'french', 'german', 'spanish', 'italian',
-    'brazilian', 'mexican', 'nigerian', 'egyptian', 'emirati', 'turkish', 'saudi',
-]);
 function parseFilename(filename) {
     const stem = path.basename(filename, path.extname(filename));
     let sortOrder = 0;
@@ -70,7 +65,6 @@ function parseFilename(filename) {
     let gender;
     let ethnicity;
     let age;
-    let nationality;
     for (const raw of rawTags) {
         const lower = raw.toLowerCase();
         const ageMatch = lower.match(/^age\s*[:=]\s*(\d{1,3})$/);
@@ -88,13 +82,9 @@ function parseFilename(filename) {
             ethnicity = lower;
             continue;
         }
-        if (NATIONALITY_CODES.has(lower)) {
-            nationality = lower;
-            continue;
-        }
         tags.push(raw);
     }
-    return { sortOrder, name, tags, gender, ethnicity, age, nationality };
+    return { sortOrder, name, tags, gender, ethnicity, age };
 }
 const MIME_MAP = {
     '.mp4': 'video/mp4',
@@ -243,10 +233,9 @@ async function main() {
                     gender: parsed.gender ?? null,
                     ethnicity: parsed.ethnicity ?? null,
                     age: parsed.age ?? null,
-                    nationality: parsed.nationality ?? null,
                 },
             });
-            console.log(`  ✏️  ${parsed.name} [g=${parsed.gender ?? '-'} e=${parsed.ethnicity ?? '-'} a=${parsed.age ?? '-'} n=${parsed.nationality ?? '-'}]`);
+            console.log(`  ✏️  ${parsed.name} [g=${parsed.gender ?? '-'} e=${parsed.ethnicity ?? '-'} a=${parsed.age ?? '-'}]`);
             updated++;
         }
         console.log(`\n✅ Refresh done — ${updated} updated, ${notFound} not matched.`);
@@ -263,7 +252,7 @@ async function main() {
             skipped++;
             continue;
         }
-        const { sortOrder, name, tags, gender, ethnicity, age, nationality } = parseFilename(file.absolutePath);
+        const { sortOrder, name, tags, gender, ethnicity, age } = parseFilename(file.absolutePath);
         const ext = path.extname(file.absolutePath).toLowerCase();
         const contentType = MIME_MAP[ext] || 'application/octet-stream';
         const category = await upsertCategory(file.category, catOrder.get(file.category) ?? 0);
@@ -309,10 +298,9 @@ async function main() {
                 gender: gender ?? null,
                 ethnicity: ethnicity ?? null,
                 age: age ?? null,
-                nationality: nationality ?? null,
             },
         });
-        console.log(`  ✅ "${name}" [${tags.join(', ')}] g=${gender ?? '-'} e=${ethnicity ?? '-'} a=${age ?? '-'} n=${nationality ?? '-'}`);
+        console.log(`  ✅ "${name}" [${tags.join(', ')}] g=${gender ?? '-'} e=${ethnicity ?? '-'} a=${age ?? '-'}`);
         created++;
     }
     console.log(`\n✅ Done — ${created} created, ${skipped} skipped.`);

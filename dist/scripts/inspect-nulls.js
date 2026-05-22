@@ -9,12 +9,10 @@ const prisma = new client_1.PrismaClient();
     const nullGender = await prisma.brollItem.count({ where: { isActive: true, gender: null } });
     const nullEthnicity = await prisma.brollItem.count({ where: { isActive: true, ethnicity: null } });
     const nullAge = await prisma.brollItem.count({ where: { isActive: true, age: null } });
-    const nullNationality = await prisma.brollItem.count({ where: { isActive: true, nationality: null } });
     console.log(`Total active items: ${total}`);
-    console.log(`  gender=null      : ${nullGender}`);
-    console.log(`  ethnicity=null   : ${nullEthnicity}`);
-    console.log(`  age=null         : ${nullAge}`);
-    console.log(`  nationality=null : ${nullNationality}`);
+    console.log(`  gender=null    : ${nullGender}`);
+    console.log(`  ethnicity=null : ${nullEthnicity}`);
+    console.log(`  age=null       : ${nullAge}`);
     const orphans = await prisma.brollItem.findMany({
         where: { isActive: true, gender: null },
         select: { id: true, name: true, sortOrder: true, subcategory: { select: { name: true, category: { select: { name: true } } } } },

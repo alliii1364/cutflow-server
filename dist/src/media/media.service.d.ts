@@ -123,7 +123,6 @@ export declare class MediaService {
         gender: string | null;
         ethnicity: string | null;
         age: number | null;
-        nationality: string | null;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;

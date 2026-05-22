@@ -72,24 +72,4 @@ __decorate([
     (0, class_validator_1.Max)(120),
     __metadata("design:type", Number)
 ], GetBrollLibraryDto.prototype, "maxAge", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        isArray: true,
-        type: String,
-        description: 'Repeat the param or pass a comma-separated list. Values are lowercased.',
-        example: ['american', 'british'],
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Transform)(({ value }) => {
-        if (value == null || value === '')
-            return undefined;
-        const list = Array.isArray(value) ? value : String(value).split(',');
-        const cleaned = list
-            .map((v) => String(v).trim().toLowerCase())
-            .filter((v) => v.length > 0);
-        return cleaned.length ? cleaned : undefined;
-    }),
-    (0, class_validator_1.IsString)({ each: true }),
-    __metadata("design:type", Array)
-], GetBrollLibraryDto.prototype, "nationalities", void 0);
 //# sourceMappingURL=get-broll-library.dto.js.map

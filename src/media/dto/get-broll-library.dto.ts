@@ -2,6 +2,7 @@ import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
+
 export enum BrollGender {
   MALE = 'male',
   FEMALE = 'female',
@@ -53,22 +54,4 @@ export class GetBrollLibraryDto {
   @Min(0)
   @Max(120)
   maxAge?: number;
-
-  @ApiPropertyOptional({
-    isArray: true,
-    type: String,
-    description: 'Repeat the param or pass a comma-separated list. Values are lowercased.',
-    example: ['american', 'british'],
-  })
-  @IsOptional()
-  @Transform(({ value }) => {
-    if (value == null || value === '') return undefined;
-    const list = Array.isArray(value) ? value : String(value).split(',');
-    const cleaned = list
-      .map((v) => String(v).trim().toLowerCase())
-      .filter((v) => v.length > 0);
-    return cleaned.length ? cleaned : undefined;
-  })
-  @IsString({ each: true })
-  nationalities?: string[];
 }

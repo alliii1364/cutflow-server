@@ -8,7 +8,7 @@ import { GetBrollLibraryDto } from './dto/get-broll-library.dto';
 
 // Bump the version suffix whenever the library shape or filter changes so stale
 // Redis entries from previous deploys don't keep leaking through.
-const BROLL_LIBRARY_CACHE_KEY = 'broll:library:v7';
+const BROLL_LIBRARY_CACHE_KEY = 'broll:library:v8';
 const BROLL_LIBRARY_TTL = 1800; // 30 minutes
 const BROLL_SEARCH_TTL = 300;   // 5 minutes
 
@@ -204,10 +204,10 @@ export class MediaService {
   // B-roll Library Methods
   async getBrollLibrary(query: GetBrollLibraryDto = {}) {
     const term = query.q?.trim() ?? '';
-    const { gender, ethnicity, minAge, maxAge, nationalities } = query;
+    const { gender, ethnicity, minAge, maxAge } = query;
 
     const hasFilters = Boolean(
-      gender || ethnicity || minAge != null || maxAge != null || (nationalities && nationalities.length),
+      gender || ethnicity || minAge != null || maxAge != null,
     );
 
     const cacheKey = !term && !hasFilters
@@ -230,7 +230,6 @@ export class MediaService {
       gender: true,
       ethnicity: true,
       age: true,
-      nationality: true,
     } as const;
 
     const itemWhere: Prisma.BrollItemWhereInput = { isActive: true };
@@ -243,7 +242,6 @@ export class MediaService {
     }
     if (gender) itemWhere.gender = gender;
     if (ethnicity) itemWhere.ethnicity = ethnicity;
-    if (nationalities && nationalities.length) itemWhere.nationality = { in: nationalities };
     if (minAge != null || maxAge != null) {
       itemWhere.age = {};
       if (minAge != null) itemWhere.age.gte = minAge;
@@ -301,7 +299,6 @@ export class MediaService {
             gender: item.gender,
             ethnicity: item.ethnicity,
             age: item.age,
-            nationality: item.nationality,
           })),
         })),
       })),
@@ -318,7 +315,6 @@ export class MediaService {
       `e=${q.ethnicity ?? ''}`,
       `min=${q.minAge ?? ''}`,
       `max=${q.maxAge ?? ''}`,
-      `n=${(q.nationalities ?? []).slice().sort().join(',')}`,
     ];
     return parts.join('|');
   }
