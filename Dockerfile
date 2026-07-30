@@ -59,9 +59,9 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Expose application port
 EXPOSE 3000
 
-# Health check
+# Health check — PORT is injected by the host platform (Railway), default 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:3000/v1/health || exit 1
+    CMD curl -f "http://localhost:${PORT:-3000}/v1/health" || exit 1
 
 # Use entrypoint script
 ENTRYPOINT ["docker-entrypoint.sh"]
